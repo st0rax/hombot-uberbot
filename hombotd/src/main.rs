@@ -1,4 +1,5 @@
 mod rawsensor;
+mod voice;
 
 use std::env;
 use std::fs::{self, File};
@@ -10,6 +11,7 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use rawsensor::RawSensorStatus;
+use voice::VoiceStatus;
 
 const WIDTH: usize = 320;
 const HEIGHT: usize = 240;
@@ -505,6 +507,7 @@ fn handle_client(
     mut stream: TcpStream,
     status: Arc<Mutex<RobotStatus>>,
     rawsensor: Arc<Mutex<RawSensorStatus>>,
+    voice: Arc<Mutex<VoiceStatus>>,
 ) {
     let _ = stream.set_nodelay(true);
     let request = match read_request(&mut stream) {
@@ -576,6 +579,19 @@ fn handle_client(
             body.as_bytes(),
         );
         Ok(())
+    } else if path.starts_with("/api/v1/voice") {
+        let body = voice
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
+            .json();
+        response(
+            &mut stream,
+            "200 OK",
+            "application/json; charset=utf-8",
+            body.as_bytes(),
+        );
+        Ok(())
     } else if path.starts_with("/frame.yuv") {
         single_frame(&mut stream)
     } else if path.starts_with("/stream.yuv") || path.starts_with("/stream.y8") {
@@ -615,26 +631,45 @@ fn main() -> std::io::Result<()> {
     } else {
         RawSensorStatus::disabled()
     }));
+    // The voice services only exist on the variant whose Name.dat selects
+    // config_voice.xml, so subscribing is off unless it is asked for.
+    let voice_enabled = matches!(
+        env::var("HOMBOTD_VOICE").unwrap_or_default().as_str(),
+        "1" | "on" | "true" | "yes"
+    );
+    let voice = Arc::new(Mutex::new(if voice_enabled {
+        VoiceStatus::new()
+    } else {
+        VoiceStatus::disabled()
+    }));
     let worker_status = Arc::clone(&status);
     thread::spawn(move || smartcontrol_worker(worker_status));
+    if voice_enabled {
+        let voice_worker = Arc::clone(&voice);
+        thread::spawn(move || voice::worker(voice_worker));
+    }
     if rawsensor_enabled {
         let rawsensor_worker = Arc::clone(&rawsensor);
         thread::spawn(move || rawsensor::worker(rawsensor_worker));
     }
     eprintln!(
-        "hombotd {VERSION} listening on 0.0.0.0:{port} (rawsensor {})",
+        "hombotd {VERSION} listening on 0.0.0.0:{port} (rawsensor {}, voice {})",
         if rawsensor_enabled {
             "enabled"
         } else {
             "disabled"
-        }
+        },
+        if voice_enabled { "enabled" } else { "disabled" }
     );
     for connection in listener.incoming() {
         match connection {
             Ok(stream) => {
                 let client_status = Arc::clone(&status);
                 let client_rawsensor = Arc::clone(&rawsensor);
-                thread::spawn(move || handle_client(stream, client_status, client_rawsensor));
+                let client_voice = Arc::clone(&voice);
+                thread::spawn(move || {
+                    handle_client(stream, client_status, client_rawsensor, client_voice)
+                });
             }
             Err(error) => eprintln!("accept error: {error}"),
         }
@@ -743,6 +778,7 @@ mod tests {
                 stream,
                 Arc::new(Mutex::new(RobotStatus::new())),
                 Arc::new(Mutex::new(RawSensorStatus::new())),
+                Arc::new(Mutex::new(VoiceStatus::new())),
             );
         });
 

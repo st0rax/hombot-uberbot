@@ -5,20 +5,20 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-const TCP_MAGIC: [u8; 2] = [0xaa, 0x55];
-const FRAMEWORK_HEADER_SIZE: usize = 32;
+pub(crate) const TCP_MAGIC: [u8; 2] = [0xaa, 0x55];
+pub(crate) const FRAMEWORK_HEADER_SIZE: usize = 32;
 const RAW_SENSOR_BODY_HEADER_SIZE: usize = 12;
 const RAW_SENSOR_SIZE: usize = 158;
 const RAW_SENSOR_FRAMEWORK_SIZE: usize =
     FRAMEWORK_HEADER_SIZE + RAW_SENSOR_BODY_HEADER_SIZE + RAW_SENSOR_SIZE;
-const MAX_FRAME_SIZE: usize = 1_050_000;
-const SUBSCRIBER_SERVICE: u16 = 13; // /collector_pc
+pub(crate) const MAX_FRAME_SIZE: usize = 1_050_000;
+pub(crate) const SUBSCRIBER_SERVICE: u16 = 13; // /collector_pc
 const DAS_SERVICE: u16 = 110;
 const RAW_SENSOR_TOPIC: u16 = 105;
 const RAW_SENSOR_MESSAGE_ID: u16 = 0x0304;
-const FRAMEWORK_SUBSCRIBE: u16 = 1;
-const FRAMEWORK_UNSUBSCRIBE: u16 = 2;
-const FRAMEWORK_PUBLISH: u16 = 3;
+pub(crate) const FRAMEWORK_SUBSCRIBE: u16 = 1;
+pub(crate) const FRAMEWORK_UNSUBSCRIBE: u16 = 2;
+pub(crate) const FRAMEWORK_PUBLISH: u16 = 3;
 const SAMPLE_STALE_AFTER: Duration = Duration::from_secs(2);
 // A subscribe can be accepted and then never deliver anything: the broker keeps
 // the socket open, so reads only ever time out and the session would otherwise
@@ -26,12 +26,12 @@ const SAMPLE_STALE_AFTER: Duration = Duration::from_secs(2);
 // decoded samples, not raw bytes, because unrelated topics also arrive on this
 // socket. They are generous next to SAMPLE_STALE_AFTER so a healthy but briefly
 // quiet route is not torn down.
-const FIRST_SAMPLE_DEADLINE: Duration = Duration::from_secs(10);
-const IDLE_DEADLINE: Duration = Duration::from_secs(5);
+pub(crate) const FIRST_SAMPLE_DEADLINE: Duration = Duration::from_secs(10);
+pub(crate) const IDLE_DEADLINE: Duration = Duration::from_secs(5);
 
 /// Decides whether a subscribed-but-quiet session has to be torn down.
 /// `since_sample` is `None` until the first sample is decoded.
-fn quiet_too_long(
+pub(crate) fn quiet_too_long(
     since_subscribe: Duration,
     since_sample: Option<Duration>,
 ) -> Option<(&'static str, Duration)> {
@@ -144,7 +144,7 @@ impl RawSensorStatus {
     }
 }
 
-fn json_string(value: Option<&str>) -> String {
+pub(crate) fn json_string(value: Option<&str>) -> String {
     let Some(value) = value else {
         return "null".to_owned();
     };
@@ -167,32 +167,32 @@ fn json_string(value: Option<&str>) -> String {
     escaped
 }
 
-fn unix_ms() -> u128 {
+pub(crate) fn unix_ms() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis()
 }
 
-fn checksum(payload: &[u8]) -> u32 {
+pub(crate) fn checksum(payload: &[u8]) -> u32 {
     payload
         .iter()
         .fold(0_u32, |sum, byte| sum.wrapping_add(u32::from(*byte)))
 }
 
-fn put_u16(buffer: &mut [u8], offset: usize, value: u16) {
+pub(crate) fn put_u16(buffer: &mut [u8], offset: usize, value: u16) {
     buffer[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
 }
 
-fn put_u32(buffer: &mut [u8], offset: usize, value: u32) {
+pub(crate) fn put_u32(buffer: &mut [u8], offset: usize, value: u32) {
     buffer[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
 }
 
-fn get_u16(buffer: &[u8], offset: usize) -> u16 {
+pub(crate) fn get_u16(buffer: &[u8], offset: usize) -> u16 {
     u16::from_le_bytes([buffer[offset], buffer[offset + 1]])
 }
 
-fn get_u32(buffer: &[u8], offset: usize) -> u32 {
+pub(crate) fn get_u32(buffer: &[u8], offset: usize) -> u32 {
     u32::from_le_bytes([
         buffer[offset],
         buffer[offset + 1],
@@ -220,7 +220,7 @@ fn subscription_message(kind: u16) -> Vec<u8> {
     message
 }
 
-fn tcp_frame(message: &[u8]) -> Vec<u8> {
+pub(crate) fn tcp_frame(message: &[u8]) -> Vec<u8> {
     let mut frame = Vec::with_capacity(message.len() + 6);
     frame.extend_from_slice(&TCP_MAGIC);
     frame.extend_from_slice(&(message.len() as u32).to_le_bytes());
@@ -228,7 +228,7 @@ fn tcp_frame(message: &[u8]) -> Vec<u8> {
     frame
 }
 
-fn drain_tcp_frames(buffer: &mut Vec<u8>) -> Vec<Vec<u8>> {
+pub(crate) fn drain_tcp_frames(buffer: &mut Vec<u8>) -> Vec<Vec<u8>> {
     let mut messages = Vec::new();
     loop {
         if buffer.len() < 6 {
@@ -297,7 +297,7 @@ fn parse_raw_sensor(message: &[u8]) -> Result<Option<RawSensorSample>, &'static 
     }))
 }
 
-fn hex(bytes: &[u8]) -> String {
+pub(crate) fn hex(bytes: &[u8]) -> String {
     const DIGITS: &[u8; 16] = b"0123456789abcdef";
     let mut output = String::with_capacity(bytes.len() * 2);
     for byte in bytes {
@@ -307,7 +307,7 @@ fn hex(bytes: &[u8]) -> String {
     output
 }
 
-fn broker_address() -> std::io::Result<SocketAddr> {
+pub(crate) fn broker_address() -> std::io::Result<SocketAddr> {
     for variable in ["HOMBOTD_RAWSENSOR_HOST", "HOMBOTD_SMARTCONTROL_HOST"] {
         if let Ok(host) = env::var(variable) {
             let ip = host
