@@ -42,6 +42,8 @@ docs/PROTOCOL.md         reconstructed SmartControl framing
 docs/REVERSE_ENGINEERING.md
 docs/HARDWARE.md         board, UART and expansion findings
 docs/ROADMAP.md          staged path from sidecar to recovery OS
+docs/USB_TETHERING.md    Android RNDIS/CDC driver and relay plan
+.github/workflows/       reproducible ARM kernel-module build
 SECURITY.md              threat model and disclosure guidance
 CONTRIBUTING.md          developer workflow and evidence rules
 ```
@@ -72,6 +74,14 @@ The binary is created at
 The camera device path and listen address can be supplied by environment
 variables. On the robot, keep logs in RAM-backed `/tmp` to reduce UBIFS wear.
 Consult `hombotd/README.md` for the exact endpoints and current limitations.
+
+## UBERPHONE USB relay
+
+Android USB tethering is an active hardware/software track. The stock kernel
+has `usbnet`, CDC Ethernet and RNDIS host support configured as modules, but LG
+omitted the latter two binaries. A reproducible module workflow and the guarded
+live-test plan are documented in
+[docs/USB_TETHERING.md](docs/USB_TETHERING.md).
 
 ## Deployment policy
 

@@ -1,0 +1,33 @@
+name: Build HomBot USB tether modules
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ARM kernel build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc bison build-essential flex gcc-arm-linux-gnueabi \
+            libelf-dev xz-utils
+
+      - name: Build modules against reconstructed LG kernel
+        run: tools/build-usb-tether-modules.sh
+
+      - name: Upload module bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: hombot-usb-tether-2.6.33.7.2-rt30
+          path: out/usb-tether-modules/
+          if-no-files-found: error
+          retention-days: 30
+
