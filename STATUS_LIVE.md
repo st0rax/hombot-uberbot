@@ -9,7 +9,7 @@ Last updated: 2026-08-23.
 
 ## Deployed
 
-- `hombotd 0.1.8` is the active service, started from `rc.local`.
+- `hombotd 0.1.9` is the active service, started from `rc.local`.
 - Boot greeting: an audio clip plays on startup via a
   `# FRANKENHOMO_GREETING` block in `/usr/etc/rc.local`, installed with
   `tools/operator/deploy_greeting.py --at-boot`.
@@ -44,6 +44,19 @@ Last updated: 2026-08-23.
   connector.** Confirmed by comparing it to the identical connector on the
   cable running to the USB port daughterboard.
 
+- **`/api/v1/system`'s `network` field**: confirmed live on the device --
+  reports the WLAN interface (`ra0`, default route) correctly when no phone is
+  attached.
+- **`/api/v1/audio` and the dashboard's audio panel** (0.1.9): confirmed live
+  -- correctly reports the built-in codec as busy (LG's own application holds
+  it) when no USB audio device is present, and the dashboard's card selector
+  reflects that rather than showing anything invented. Streaming audio to the
+  browser itself needs a USB audio device plugged in to test end to end; not
+  yet done.
+- **Dashboard "sensor envelope" radar removed.** It was a static decorative
+  graphic that never plotted anything -- see `AGENTS.md`'s evidence rule.
+  Replaced with plain text tied to the real `/api/v1/sensors` state.
+
 ## Decoded, not yet live-confirmed
 
 - **Factory voice service protocol** (`docs/VOICE_PROTOCOL.md`,
@@ -55,10 +68,6 @@ Last updated: 2026-08-23.
   variant (see `AGENTS.md`) -- `hombotd`'s `/api/v1/voice` endpoint reports
   `"live_confirmed": false` for exactly this reason and will keep doing so
   until a real frame is observed.
-- **`/api/v1/system`'s `network` field** (`hombotd/src/net.rs`): unit-tested
-  against synthetic `/proc/net/route` and `/proc/net/dev` fixtures, compiled
-  into the deployed 0.1.8 build, but not independently re-queried on the
-  device after this deployment in this session.
 
 ## Known and open
 
