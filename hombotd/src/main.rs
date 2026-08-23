@@ -258,6 +258,10 @@ fn connect_smartcontrol(status: &Arc<Mutex<RobotStatus>>) -> std::io::Result<()>
             "SmartControl did not enable session",
         ));
     }
+    // Port 4002 is only the one-shot admission channel. The service closes
+    // its side after ENABLE, so release our descriptor before entering the
+    // long-lived command loop on port 4000.
+    drop(session);
 
     let mut command =
         TcpStream::connect_timeout(&SocketAddr::new(host, 4000), Duration::from_secs(3))?;

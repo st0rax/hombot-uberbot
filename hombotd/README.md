@@ -9,8 +9,8 @@ hardware abstraction layer. It never opens the Micom UART.
 - Version: 0.1.3
 - Device path: `/usr/data/frankenhomo/releases/0.1.3/hombotd`
 - Listen port: 6260
-- SHA-256: `05cbe6ee999bfa01394714c7d0c2b8239dbfd5bc88c4b1092321aeb118bc7b5f`
-- Static ELF32 ARM, ARMv5TE baseline, musl, 440,008 bytes
+- SHA-256: `3893b112136b6a351ced2c1b3164cf0c76ad656b75925fe229d12ec506399a0a`
+- Static ELF32 ARM, ARMv5TE baseline, musl, 440,104 bytes
 - Release 0.1.2 runtime VSZ observed on the HomBot: 532 KiB
 
 ## Endpoints
