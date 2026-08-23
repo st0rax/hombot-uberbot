@@ -22,7 +22,10 @@ jobs:
 
       - name: Build modules against reconstructed LG kernel
         run: |
-          tools/build-lg-kernel-modules.sh usb-tether-modules - \n            drivers/net/usb/usbnet.ko \n            drivers/net/usb/cdc_ether.ko \n            drivers/net/usb/rndis_host.ko
+          tools/build-lg-kernel-modules.sh usb-tether-modules - \
+            drivers/net/usb/usbnet.ko \
+            drivers/net/usb/cdc_ether.ko \
+            drivers/net/usb/rndis_host.ko
 
       - name: Upload module bundle
         uses: actions/upload-artifact@v4
