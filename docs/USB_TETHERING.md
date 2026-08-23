@@ -64,6 +64,46 @@ built in the same run and are therefore consistent by construction. `insmod` on
 the device stays the final authority, and it fails closed: a CRC mismatch is
 refused, not loaded.
 
+## Live result
+
+The link is proven end to end on the robot, 2026-08-23:
+
+```text
+insmod usbnet.ko      exit 0
+insmod cdc_ether.ko   exit 0
+insmod rndis_host.ko  exit 0
+
+usb0: register 'rndis_host' at usb-nx-ehci-1.3, RNDIS device, 56:c0:72:58:4a:08
+Lease of 10.202.167.50 obtained, lease time 3599
+
+--- 10.202.167.41 ping statistics ---
+3 packets transmitted, 3 packets received, 0% packet loss
+round-trip min/avg/max = 2.5/2.6/2.9 ms
+```
+
+`insmod` is the check that mattered: it compares every imported symbol's CRC
+against the running kernel and refuses on any mismatch. All three modules were
+accepted, so the reconstructed tree really does reproduce LG's ABI -- the
+offline comparison in the section above was right, and now it is confirmed
+rather than merely consistent.
+
+Two defects surfaced during the live run and are fixed in `deploy/`:
+
+* The scripts assumed `ifconfig`, `route` and `udhcpc` were on `PATH`. They are
+  in `/sbin`, which a non-interactive ssh command does not get, so the manager
+  aborted before touching anything. It now sets `PATH` itself.
+* `udhcpc -t 5` never saw a lease. Android brings its tethering DHCP server up a
+  moment after the RNDIS interface appears, and five quick discovers miss it;
+  `-t 20 -T 3` gets a lease reliably on the same hardware.
+
+The default route stayed on WLAN throughout, which is the point of `link` mode:
+the phone is reachable as a local link without mobile data silently carrying the
+robot's traffic. Promoting it to an uplink is a separate, deliberate step.
+
+Still outstanding before any boot-time change: the three plug/unplug cycles in
+the gate list below, and a measured throughput figure. Nothing here has been
+made persistent.
+
 ## Intended topology
 
 ```text
