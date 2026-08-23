@@ -19,9 +19,12 @@ patch -p1 < "$ROOT/tools/kernel-modern-toolchain.patch"
 
 # New ARM binutils treat `#` as a comment marker and reject the legacy section
 # flag spelling used by 2.6.33.  Convert it to the equivalent ELF spelling.
-grep -rl ', #alloc, #execinstr' arch/arm | while IFS= read -r source; do
-  sed -i 's|, #alloc, #execinstr|, "ax", %progbits|g' "$source"
+# 2.6.33 spells these with and without spaces, and .piggydata carries only the
+# alloc flag, so cover every form and then assert none survived.
+grep -rlE ',[[:space:]]*#alloc' arch/arm | while IFS= read -r source; do
+  sed -i -E     -e 's|,[[:space:]]*#alloc[[:space:]]*,[[:space:]]*#execinstr|, "ax", %progbits|g'     -e 's|,[[:space:]]*#alloc[[:space:]]*,[[:space:]]*#write|, "aw", %progbits|g'     -e 's|,[[:space:]]*#alloc[[:space:]]*$|, "a", %progbits|g'     "$source"
 done
+! grep -rq '#alloc' arch/arm
 
 # Perl 5.22 removed `defined(@array)`, which kernel/timeconst.pl still uses to
 # test whether a canned HZ table exists.  The bare array already has the right
