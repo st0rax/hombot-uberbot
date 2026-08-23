@@ -1,5 +1,7 @@
+mod rawsensor;
+
 use std::env;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{ErrorKind, Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream, UdpSocket};
 use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
@@ -7,13 +9,35 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use rawsensor::RawSensorStatus;
+
 const WIDTH: usize = 320;
 const HEIGHT: usize = 240;
 const LUMA_SIZE: usize = WIDTH * HEIGHT;
 const FRAME_SIZE: usize = WIDTH * HEIGHT * 2;
 const CAMERA_DEVICE: &str = "/dev/camclone";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 static STREAM_GENERATION: AtomicUsize = AtomicUsize::new(0);
+static ACTIVE_STREAMS: AtomicUsize = AtomicUsize::new(0);
+static CAMERA_FRAMES: AtomicUsize = AtomicUsize::new(0);
+static LAST_STREAM_FPS: AtomicUsize = AtomicUsize::new(0);
+static LAST_STREAM_MODE: AtomicU8 = AtomicU8::new(0);
 static SMARTCONTROL_PACKET_ID: AtomicU8 = AtomicU8::new(0);
+
+struct ActiveStream;
+
+impl ActiveStream {
+    fn enter() -> Self {
+        ACTIVE_STREAMS.fetch_add(1, Ordering::AcqRel);
+        Self
+    }
+}
+
+impl Drop for ActiveStream {
+    fn drop(&mut self) {
+        ACTIVE_STREAMS.fetch_sub(1, Ordering::AcqRel);
+    }
+}
 
 #[derive(Clone, Default)]
 struct RobotStatus {
@@ -46,13 +70,14 @@ impl RobotStatus {
             .map(|value| value * 20);
         format!(
             concat!(
-                "{{\"service\":\"hombotd\",\"version\":\"0.1.3\",",
+                "{{\"service\":\"hombotd\",\"version\":{},",
                 "\"smartcontrol\":{},\"robot_state\":{},\"turbo\":{},",
                 "\"repeat\":{},\"battery_level\":{},\"battery_percent\":{},",
                 "\"mode\":{},\"nickname\":{},\"firmware\":{},",
                 "\"last_update_unix_ms\":{},\"reconnects\":{},",
                 "\"last_error\":{},\"last_payload\":{}}}"
             ),
+            json_string(Some(VERSION)),
             json_string(Some(&self.smartcontrol)),
             json_string(self.robot_state.as_deref()),
             json_string(self.turbo.as_deref()),
@@ -106,6 +131,88 @@ fn unix_ms() -> u128 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis()
+}
+
+fn first_number(path: &str) -> Option<f64> {
+    fs::read_to_string(path)
+        .ok()?
+        .split_whitespace()
+        .next()?
+        .parse()
+        .ok()
+}
+
+fn meminfo_kib(contents: &str, key: &str) -> Option<u64> {
+    contents
+        .lines()
+        .find(|line| line.starts_with(key))?
+        .split_whitespace()
+        .nth(1)?
+        .parse()
+        .ok()
+}
+
+fn system_json() -> String {
+    let uptime = first_number("/proc/uptime");
+    let load_1m = first_number("/proc/loadavg");
+    let meminfo = fs::read_to_string("/proc/meminfo").unwrap_or_default();
+    let mem_total = meminfo_kib(&meminfo, "MemTotal:");
+    let mem_free = meminfo_kib(&meminfo, "MemFree:");
+    let buffers = meminfo_kib(&meminfo, "Buffers:");
+    let cached = meminfo_kib(&meminfo, "Cached:");
+    let mem_available_estimate = match (mem_free, buffers, cached) {
+        (Some(free), Some(buffers), Some(cached)) => Some(free + buffers + cached),
+        _ => None,
+    };
+    let rss_kib = fs::read_to_string("/proc/self/statm")
+        .ok()
+        .and_then(|value| {
+            value
+                .split_whitespace()
+                .nth(1)
+                .and_then(|pages| pages.parse::<u64>().ok())
+        })
+        .map(|pages| pages * 4);
+    let mode = match LAST_STREAM_MODE.load(Ordering::Acquire) {
+        1 => Some("color"),
+        2 => Some("gray"),
+        _ => None,
+    };
+
+    format!(
+        concat!(
+            "{{\"service\":\"hombotd\",\"version\":{},",
+            "\"uptime_seconds\":{},\"load_1m\":{},",
+            "\"memory_total_kib\":{},\"memory_free_kib\":{},",
+            "\"memory_available_estimate_kib\":{},\"process_rss_kib\":{},",
+            "\"camera\":{{\"active_streams\":{},\"frames_since_start\":{},",
+            "\"last_mode\":{},\"last_target_fps\":{}}}}}"
+        ),
+        json_string(Some(VERSION)),
+        json_f64(uptime),
+        json_f64(load_1m),
+        json_u64(mem_total),
+        json_u64(mem_free),
+        json_u64(mem_available_estimate),
+        json_u64(rss_kib),
+        ACTIVE_STREAMS.load(Ordering::Acquire),
+        CAMERA_FRAMES.load(Ordering::Acquire),
+        json_string(mode),
+        LAST_STREAM_FPS.load(Ordering::Acquire),
+    )
+}
+
+fn json_f64(value: Option<f64>) -> String {
+    value
+        .filter(|number| number.is_finite())
+        .map(|number| format!("{number:.2}"))
+        .unwrap_or_else(|| "null".to_owned())
+}
+
+fn json_u64(value: Option<u64>) -> String {
+    value
+        .map(|number| number.to_string())
+        .unwrap_or_else(|| "null".to_owned())
 }
 
 fn extract_json_string(payload: &str, key: &str) -> Option<String> {
@@ -332,9 +439,12 @@ fn stream_camera(stream: &mut TcpStream, path: &str) -> std::io::Result<()> {
     // A newer stream supersedes an older one. This makes mode switches
     // immediate and prevents stale clients from retaining the camera.
     let generation = STREAM_GENERATION.fetch_add(1, Ordering::AcqRel) + 1;
+    let _active_stream = ActiveStream::enter();
 
     let fps = requested_fps(path);
     let grayscale = path.starts_with("/stream.y8");
+    LAST_STREAM_FPS.store(fps as usize, Ordering::Release);
+    LAST_STREAM_MODE.store(if grayscale { 2 } else { 1 }, Ordering::Release);
     let transmitted_size = if grayscale { LUMA_SIZE } else { FRAME_SIZE };
     let content_type = if grayscale {
         "application/x-hombot-y8"
@@ -356,6 +466,7 @@ fn stream_camera(stream: &mut TcpStream, path: &str) -> std::io::Result<()> {
         let started = Instant::now();
         camera.read_exact(&mut frame)?;
         stream.write_all(&frame[..transmitted_size])?;
+        CAMERA_FRAMES.fetch_add(1, Ordering::Relaxed);
         let elapsed = started.elapsed();
         if elapsed < frame_period {
             thread::sleep(frame_period - elapsed);
@@ -368,6 +479,7 @@ fn single_frame(stream: &mut TcpStream) -> std::io::Result<()> {
     let mut camera = File::open(CAMERA_DEVICE)?;
     let mut frame = vec![0_u8; FRAME_SIZE];
     camera.read_exact(&mut frame)?;
+    CAMERA_FRAMES.fetch_add(1, Ordering::Relaxed);
     response(stream, "200 OK", "application/x-hombot-yuv422p", &frame);
     Ok(())
 }
@@ -389,7 +501,11 @@ fn read_request(stream: &mut TcpStream) -> std::io::Result<String> {
     Ok(String::from_utf8_lossy(&request).into_owned())
 }
 
-fn handle_client(mut stream: TcpStream, status: Arc<Mutex<RobotStatus>>) {
+fn handle_client(
+    mut stream: TcpStream,
+    status: Arc<Mutex<RobotStatus>>,
+    rawsensor: Arc<Mutex<RawSensorStatus>>,
+) {
     let _ = stream.set_nodelay(true);
     let request = match read_request(&mut stream) {
         Ok(value) => value,
@@ -419,13 +535,36 @@ fn handle_client(mut stream: TcpStream, status: Arc<Mutex<RobotStatus>>) {
             .smartcontrol
             .clone();
         let body = format!(
-            "{{\"status\":\"ok\",\"service\":\"hombotd\",\"version\":\"0.1.3\",\"camera\":\"/dev/camclone\",\"smartcontrol\":{}}}",
+            "{{\"status\":\"ok\",\"service\":\"hombotd\",\"version\":{},\"camera\":\"/dev/camclone\",\"smartcontrol\":{}}}",
+            json_string(Some(VERSION)),
             json_string(Some(&state))
         );
         response(&mut stream, "200 OK", "application/json", body.as_bytes());
         Ok(())
     } else if path.starts_with("/api/v1/status") {
         let body = status
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone()
+            .json();
+        response(
+            &mut stream,
+            "200 OK",
+            "application/json; charset=utf-8",
+            body.as_bytes(),
+        );
+        Ok(())
+    } else if path.starts_with("/api/v1/system") {
+        let body = system_json();
+        response(
+            &mut stream,
+            "200 OK",
+            "application/json; charset=utf-8",
+            body.as_bytes(),
+        );
+        Ok(())
+    } else if path.starts_with("/api/v1/sensors") {
+        let body = rawsensor
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clone()
@@ -463,14 +602,39 @@ fn main() -> std::io::Result<()> {
         .unwrap_or(6261);
     let listener = TcpListener::bind(("0.0.0.0", port))?;
     let status = Arc::new(Mutex::new(RobotStatus::new()));
+    // The broker subscriber opens a second, cross-service connection into the
+    // robot's own message bus. That is a bigger step than reading /proc, so it
+    // stays off unless it is switched on deliberately -- a fresh start must not
+    // quietly begin talking to the broker.
+    let rawsensor_enabled = matches!(
+        env::var("HOMBOTD_RAWSENSOR").unwrap_or_default().as_str(),
+        "1" | "on" | "true" | "yes"
+    );
+    let rawsensor = Arc::new(Mutex::new(if rawsensor_enabled {
+        RawSensorStatus::new()
+    } else {
+        RawSensorStatus::disabled()
+    }));
     let worker_status = Arc::clone(&status);
     thread::spawn(move || smartcontrol_worker(worker_status));
-    eprintln!("hombotd 0.1.3 listening on 0.0.0.0:{port}");
+    if rawsensor_enabled {
+        let rawsensor_worker = Arc::clone(&rawsensor);
+        thread::spawn(move || rawsensor::worker(rawsensor_worker));
+    }
+    eprintln!(
+        "hombotd {VERSION} listening on 0.0.0.0:{port} (rawsensor {})",
+        if rawsensor_enabled {
+            "enabled"
+        } else {
+            "disabled"
+        }
+    );
     for connection in listener.incoming() {
         match connection {
             Ok(stream) => {
                 let client_status = Arc::clone(&status);
-                thread::spawn(move || handle_client(stream, client_status));
+                let client_rawsensor = Arc::clone(&rawsensor);
+                thread::spawn(move || handle_client(stream, client_status, client_rawsensor));
             }
             Err(error) => eprintln!("accept error: {error}"),
         }
@@ -478,7 +642,8 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-const UI: &[u8] = br###"<!doctype html>
+#[allow(dead_code)]
+const UI_LEGACY: &[u8] = br###"<!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -512,6 +677,8 @@ function fullscreen(){if(canvas.requestFullscreen)canvas.requestFullscreen();els
 async function refreshStatus(){try{let r=await fetch('/api/v1/status',{cache:'no-store'}),s=await r.json();text('robotState',s.robot_state||'-');text('battery',s.battery_percent==null?'unbekannt':s.battery_percent+' % (raw '+s.battery_level+')');text('mode',s.mode||'-');text('smartcontrol',s.smartcontrol);text('firmware',s.firmware||'-')}catch(e){text('smartcontrol','API offline')}}
 canvas.addEventListener('dblclick',fullscreen);setInterval(refreshStatus,1000);refreshStatus();start(15,false);
 </script></body></html>"###;
+
+const UI: &[u8] = include_bytes!("../ui/index.html");
 
 #[cfg(test)]
 mod tests {
@@ -556,5 +723,40 @@ mod tests {
         assert!(json.contains("\"battery_level\":4"));
         assert!(json.contains("\"battery_percent\":80"));
         assert!(json.contains("\"firmware\":\"11128\""));
+    }
+
+    #[test]
+    fn meminfo_parser_uses_exact_keys() {
+        let sample = "MemTotal: 109428 kB\nMemFree: 35060 kB\nCached: 14956 kB\n";
+        assert_eq!(meminfo_kib(sample, "MemTotal:"), Some(109_428));
+        assert_eq!(meminfo_kib(sample, "MemFree:"), Some(35_060));
+        assert_eq!(meminfo_kib(sample, "SwapFree:"), None);
+    }
+
+    #[test]
+    fn sensors_endpoint_is_read_only_and_reports_unavailable_before_first_sample() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            handle_client(
+                stream,
+                Arc::new(Mutex::new(RobotStatus::new())),
+                Arc::new(Mutex::new(RawSensorStatus::new())),
+            );
+        });
+
+        let mut client = TcpStream::connect(address).unwrap();
+        client
+            .write_all(b"GET /api/v1/sensors HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            .unwrap();
+        let mut response = String::new();
+        client.read_to_string(&mut response).unwrap();
+        server.join().unwrap();
+
+        assert!(response.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(response.contains("\"available\":false"));
+        assert!(response.contains("\"source\":\"broker_rawsensor\""));
+        assert!(response.contains("\"battery\":null"));
     }
 }
