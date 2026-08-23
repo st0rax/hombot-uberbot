@@ -41,5 +41,7 @@ jobs:
           make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- kernel/fork.s
           echo "=========== .ifnc / .err occurrences ==========="
           grep -n '\.ifnc' kernel/fork.s | head -40
-          echo "=========== context ==========="
-          awk 'NR>=830 && NR<=880 {print NR": "$0}' kernel/fork.s
+          echo "=========== context bad site ==========="
+          awk 'NR>=1060 && NR<=1140 {print NR": "$0}' kernel/fork.s
+          echo "=========== context good site ==========="
+          awk 'NR>=3350 && NR<=3400 {print NR": "$0}' kernel/fork.s
