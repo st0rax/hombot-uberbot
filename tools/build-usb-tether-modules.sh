@@ -15,7 +15,14 @@ cd "$BUILD/kernel.rk"
 
 cd kernel-2.6.33
 cp ../files/arch/arm/configs/rk_hit_v2_ubif_defconfig .config
+# Linux 2.6.33 has no reliable olddefconfig target.  Keep accepting defaults,
+# but preserve make's exit code: `yes` normally receives SIGPIPE once Kconfig
+# is done, which must not fail this pipefail-enabled build.
+set +o pipefail
 yes "" | make ARCH=arm CROSS_COMPILE="$CROSS" oldconfig
+oldconfig_status=${PIPESTATUS[1]}
+set -o pipefail
+test "$oldconfig_status" -eq 0
 
 # CONFIG_MODVERSIONS requires a complete matching build so Module.symvers is
 # generated from the same source/config as the target kernel.
@@ -42,4 +49,3 @@ done
 
 (cd "$OUT" && sha256sum *.ko > SHA256SUMS)
 file "$OUT"/*.ko | tee "$OUT/FILEINFO.txt"
-
