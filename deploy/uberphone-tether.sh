@@ -108,7 +108,10 @@ start_tether() {
     export UBERPHONE_ROUTE_MODE=$route_mode
     export UBERPHONE_STATE_FILE=$STATE_FILE
     export UBERPHONE_LOG_FILE=$LOG_FILE
-    udhcpc -i "$iface" -p "$PID_FILE" -s "$DHCP_SCRIPT" -t 5 -T 3 -b ||
+    # Android brings its tethering DHCP server up a moment after the RNDIS
+    # interface appears, so five quick discovers routinely miss it -- measured
+    # on a OnePlus 9 Pro, where -t 5 found nothing and -t 20 got a lease.
+    udhcpc -i "$iface" -p "$PID_FILE" -s "$DHCP_SCRIPT" -t 20 -T 3 -b ||
         die "udhcpc failed on $iface"
 
     attempts=0
