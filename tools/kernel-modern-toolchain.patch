@@ -1,0 +1,48 @@
+--- a/arch/arm/mach-nxp2120/include/mach/soc.h
++++ b/arch/arm/mach-nxp2120/include/mach/soc.h
+@@ -59,30 +59,24 @@ struct dma_trans {
+ 	int			 channel;
+ 	unsigned int tr_type;
++	/*
++	 * LG's original source used three anonymous structs with duplicate
++	 * promoted member names. GCC 4.3 accepted that extension, while current
++	 * GCC rejects it. All three variants have the same 20-byte union layout;
++	 * spelling the overlapping ID/bit fields as unions preserves both offsets
++	 * and the source-level field names.
++	 */
++	unsigned int srcbase;
++	unsigned int dstbase;
+ 	union {
+-		/* memory to io */
+-		struct {
+-			unsigned int srcbase;
+-			unsigned int dstbase;
+-			unsigned int dst_id;
+-			unsigned int dst_bit;
+-			unsigned int length;
+-		};
+-		/* io to memory */
+-		struct {
+-			unsigned int srcbase;
+-			unsigned int dstbase;
+-			unsigned int src_id;
+-			unsigned int src_bit;
+-			unsigned int length;
+-		};
+-		/* memory to memory */
+-		struct {
+-			unsigned int srcbase;
+-			unsigned int dstbase;
+-			unsigned int length;
+-		};
++		unsigned int dst_id;
++		unsigned int src_id;
++	};
++	union {
++		unsigned int dst_bit;
++		unsigned int src_bit;
+ 	};
++	unsigned int length;
+ };
+ 
+ struct dma_trans * 	soc_dma_request (int channel, bool dynamic);

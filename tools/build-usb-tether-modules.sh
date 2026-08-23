@@ -15,6 +15,7 @@ cd "$BUILD/kernel.rk"
 
 cd kernel-2.6.33
 cp ../files/arch/arm/configs/rk_hit_v2_ubif_defconfig .config
+patch -p1 < "$ROOT/tools/kernel-modern-toolchain.patch"
 
 # New ARM binutils treat `#` as a comment marker and reject the legacy section
 # flag spelling used by 2.6.33.  Convert it to the equivalent ELF spelling.
