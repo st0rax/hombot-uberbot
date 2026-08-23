@@ -15,6 +15,16 @@ cd "$BUILD/kernel.rk"
 
 cd kernel-2.6.33
 cp ../files/arch/arm/configs/rk_hit_v2_ubif_defconfig .config
+
+# Linux 2.6.33 predates modern GCC-specific compiler headers.  The ARM kernel
+# still uses the GCC 4-compatible attribute definitions; expose that header
+# under the detected major version so current reproducible runners can build it.
+gcc_major=$(${CROSS}gcc -dumpfullversion -dumpversion | cut -d. -f1)
+compiler_header="include/linux/compiler-gcc${gcc_major}.h"
+if [ ! -e "$compiler_header" ]; then
+  ln -s compiler-gcc4.h "$compiler_header"
+fi
+
 # Linux 2.6.33 has no reliable olddefconfig target.  Keep accepting defaults,
 # but preserve make's exit code: `yes` normally receives SIGPIPE once Kconfig
 # is done, which must not fail this pipefail-enabled build.
