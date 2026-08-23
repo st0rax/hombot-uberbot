@@ -62,7 +62,12 @@ test "$oldconfig_status" -eq 0
 
 # CONFIG_MODVERSIONS requires a complete matching build so Module.symvers is
 # generated from the same source/config as the target kernel.
-make -j2 ARCH=arm CROSS_COMPILE="$CROSS" zImage modules
+# LG built this tree with GCC 4.3, where plain `__inline` still followed GNU89
+# semantics and emitted an externally visible out-of-line copy.  Current GCC
+# defaults to C99 inline, which emits none -- so Nexell helpers such as
+# NX_GPIO_SetBit end up as undefined references when vmlinux is linked.
+# Restore the original semantics rather than editing every Nexell helper.
+make -j2 ARCH=arm CROSS_COMPILE="$CROSS" KCFLAGS=-fgnu89-inline zImage modules
 
 for module in usbnet cdc_ether rndis_host; do
   source="drivers/net/usb/$module.ko"
