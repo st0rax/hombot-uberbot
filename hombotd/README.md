@@ -66,9 +66,15 @@ teleoperation; color remains available when detail matters.
 `FRANKENHOMO_SERVER_START`/`END` and launches:
 
 ```sh
-HOMBOTD_PORT=6260 /usr/data/frankenhomo/releases/0.1.3/hombotd \
+HOMBOTD_PORT=6260 HOMBOTD_SMARTCONTROL_HOST=127.0.0.1 \
+  /usr/data/frankenhomo/releases/0.1.3/hombotd \
   >/tmp/hombotd.log 2>&1 &
 ```
+
+The stock boot sequence leaves `lo` without `127.0.0.1` and without the `UP`
+flag, although LG's SmartControl design expects localhost. The managed startup
+block brings up standard loopback and pins the internal adapter to
+`HOMBOTD_SMARTCONTROL_HOST=127.0.0.1` before starting `hombotd`.
 
 The original `lg.srv` startup block is absent. `lg.srv` itself was not deleted.
 The pre-change startup file is:

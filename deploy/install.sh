@@ -44,9 +44,10 @@ $0 == "if [ -x /usr/bin/lg.srv ]" {
     replaced = 1
     print "# FRANKENHOMO_SERVER_START"
     print "# lg.srv is retained on disk for rollback but is no longer started."
+    print "/sbin/ifconfig lo 127.0.0.1 netmask 255.0.0.0 up 2>/dev/null || true"
     print "if [ -x " release " ]"
     print "then"
-    print "  HOMBOTD_PORT=6260 " release " >/tmp/hombotd.log 2>&1 &"
+    print "  HOMBOTD_PORT=6260 HOMBOTD_SMARTCONTROL_HOST=127.0.0.1 " release " >/tmp/hombotd.log 2>&1 &"
     print "  echo $! > /tmp/hombotd.pid"
     print "fi"
     print "# FRANKENHOMO_SERVER_END"

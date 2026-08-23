@@ -31,9 +31,10 @@ $0 == "# FRANKENHOMO_SERVER_START" {
     replaced++
     print "# FRANKENHOMO_SERVER_START"
     print "# lg.srv is retained on disk for rollback but is no longer started."
+    print "/sbin/ifconfig lo 127.0.0.1 netmask 255.0.0.0 up 2>/dev/null || true"
     print "if [ -x /usr/data/frankenhomo/releases/0.1.3/hombotd ]"
     print "then"
-    print "  HOMBOTD_PORT=6260 /usr/data/frankenhomo/releases/0.1.3/hombotd >/tmp/hombotd.log 2>&1 &"
+    print "  HOMBOTD_PORT=6260 HOMBOTD_SMARTCONTROL_HOST=127.0.0.1 /usr/data/frankenhomo/releases/0.1.3/hombotd >/tmp/hombotd.log 2>&1 &"
     print "  echo $! > /tmp/hombotd.pid"
     print "fi"
     print "# FRANKENHOMO_SERVER_END"
@@ -62,7 +63,7 @@ then
     sleep 1
 fi
 
-HOMBOTD_PORT=6260 "$RELEASE" >/tmp/hombotd.log 2>&1 &
+HOMBOTD_PORT=6260 HOMBOTD_SMARTCONTROL_HOST=127.0.0.1 "$RELEASE" >/tmp/hombotd.log 2>&1 &
 NEW_PID=$!
 echo "$NEW_PID" > /tmp/hombotd.pid
 sleep 1
