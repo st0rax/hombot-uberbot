@@ -1,6 +1,11 @@
 #!/bin/sh
 # udhcpc hook used only by uberphone-tether.sh.
 
+# ifconfig, route and udhcpc live in /sbin, which is not on PATH for a
+# non-interactive ssh command. Set it here so the script behaves the same
+# whether it is run from rc.local, a login shell, or over ssh.
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:$PATH
+export PATH
 set -u
 
 STATE_FILE=${UBERPHONE_STATE_FILE:-/tmp/uberphone/lease.state}

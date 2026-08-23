@@ -4,6 +4,12 @@
 
 set -u
 
+# ifconfig, route and udhcpc live in /sbin, which is not on PATH for a
+# non-interactive ssh command. Set it here so the script behaves the same
+# whether it is run from rc.local, a login shell, or over ssh.
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:$PATH
+export PATH
+
 RUNTIME_DIR=${UBERPHONE_RUNTIME_DIR:-/tmp/uberphone}
 MODULE_DIR=${UBERPHONE_MODULE_DIR:-/usr/data/frankenhomo/modules/usb-tether}
 DHCP_SCRIPT=${UBERPHONE_DHCP_SCRIPT:-/usr/data/frankenhomo/bin/udhcpc-uberphone.sh}
