@@ -17,7 +17,7 @@ control is intentionally not exposed yet.
 
 ## Current status
 
-Release **0.1.8** is deployed as the active service on the research device.
+Release **0.1.10** is deployed as the active service on the research device.
 See [`STATUS_LIVE.md`](STATUS_LIVE.md) for the up-to-date, verified-vs-decoded
 breakdown; it changes faster than this file. In short:
 
@@ -34,6 +34,9 @@ breakdown; it changes faster than this file. In short:
   standalone browser FPV/telemetry page with a spoken boot greeting.
 - Keeps the original `lg.srv` binary on the device and provides a documented
   rollback path.
+- The first write-capable endpoint, `POST /api/v1/audio/play`, plays an
+  uploaded clip through a free sound card and requires a local
+  `X-Hombot-Token` (generated on first use, mode 0600) -- see `AGENTS.md`.
 - USB tethering (RNDIS/CDC) and USB audio kernel modules are built
   reproducibly against a reconstructed kernel, ABI-verified offline, and
   `insmod`-confirmed live on the device -- see

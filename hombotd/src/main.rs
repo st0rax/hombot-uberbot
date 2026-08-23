@@ -1,4 +1,5 @@
 mod audio;
+mod auth;
 mod net;
 mod rawsensor;
 mod voice;
@@ -421,7 +422,7 @@ fn smartcontrol_worker(status: Arc<Mutex<RobotStatus>>) {
     }
 }
 
-fn response(stream: &mut TcpStream, status: &str, content_type: &str, body: &[u8]) {
+pub(crate) fn response(stream: &mut TcpStream, status: &str, content_type: &str, body: &[u8]) {
     let header = format!(
         "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\n\r\n",
         body.len()
@@ -490,21 +491,34 @@ fn single_frame(stream: &mut TcpStream) -> std::io::Result<()> {
     Ok(())
 }
 
-fn read_request(stream: &mut TcpStream) -> std::io::Result<String> {
+/// Reads the request head and returns it together with whatever body bytes
+/// already arrived with it. The playback endpoint pipes those straight into
+/// `aplay`; buffering a whole answer would cost RAM the robot does not have.
+fn read_head(stream: &mut TcpStream) -> std::io::Result<(String, Vec<u8>)> {
     stream.set_read_timeout(Some(Duration::from_secs(2)))?;
-    let mut request = Vec::with_capacity(1024);
+    let mut buffer = Vec::with_capacity(1024);
     let mut chunk = [0_u8; 512];
-    while request.len() < 4096 {
+    let head_end = loop {
+        if buffer.len() > 65_536 {
+            return Err(std::io::Error::new(
+                ErrorKind::InvalidData,
+                "request head too large",
+            ));
+        }
         let count = stream.read(&mut chunk)?;
         if count == 0 {
-            break;
+            break buffer.len();
         }
-        request.extend_from_slice(&chunk[..count]);
-        if request.windows(4).any(|value| value == b"\r\n\r\n") {
-            break;
+        buffer.extend_from_slice(&chunk[..count]);
+        if let Some(position) = buffer.windows(4).position(|value| value == b"\r\n\r\n") {
+            break position + 4;
         }
-    }
-    Ok(String::from_utf8_lossy(&request).into_owned())
+    };
+    let head_end = head_end.min(buffer.len());
+    Ok((
+        String::from_utf8_lossy(&buffer[..head_end]).into_owned(),
+        buffer[head_end..].to_vec(),
+    ))
 }
 
 fn handle_client(
@@ -514,13 +528,33 @@ fn handle_client(
     voice: Arc<Mutex<VoiceStatus>>,
 ) {
     let _ = stream.set_nodelay(true);
-    let request = match read_request(&mut stream) {
+    let (request, leftover) = match read_head(&mut stream) {
         Ok(value) => value,
         Err(_) => return,
     };
     let mut first_line = request.lines().next().unwrap_or("").split_whitespace();
     let method = first_line.next().unwrap_or("");
     let path = first_line.next().unwrap_or("/");
+
+    if method == "POST" && path.starts_with("/api/v1/audio/play") {
+        // SECURITY.md: "Do not add unauthenticated ... upload ... endpoints" /
+        // "require an unpredictable local token". This is the first
+        // write-capable endpoint the daemon has ever had; gate it before any
+        // byte of the body is touched.
+        if !auth::authorized(&request) {
+            response(
+                &mut stream,
+                "401 Unauthorized",
+                "application/json",
+                br#"{"error":"missing or wrong X-Hombot-Token"}"#,
+            );
+            return;
+        }
+        if let Err(error) = audio::play_audio(&mut stream, path, &request, leftover) {
+            eprintln!("client error: {error}");
+        }
+        return;
+    }
 
     if method != "GET" {
         response(
@@ -808,5 +842,87 @@ mod tests {
         assert!(response.contains("\"available\":false"));
         assert!(response.contains("\"source\":\"broker_rawsensor\""));
         assert!(response.contains("\"battery\":null"));
+    }
+
+    #[test]
+    fn playback_post_without_sound_cards_answers_with_the_busy_hint() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            handle_client(
+                stream,
+                Arc::new(Mutex::new(RobotStatus::new())),
+                Arc::new(Mutex::new(RawSensorStatus::disabled())),
+                Arc::new(Mutex::new(VoiceStatus::disabled())),
+            );
+        });
+
+        let mut client = TcpStream::connect(address).unwrap();
+        let request = format!(
+            "POST /api/v1/audio/play HTTP/1.1\r\nHost: localhost\r\nX-Hombot-Token: {}\r\nContent-Length: 4\r\n\r\nRIFF",
+            auth::test_token()
+        );
+        client.write_all(request.as_bytes()).unwrap();
+        let mut response = String::new();
+        client.read_to_string(&mut response).unwrap();
+        server.join().unwrap();
+
+        assert!(response.starts_with("HTTP/1.1 503 Service Unavailable\r\n"));
+        assert!(response.contains("\"error\":\"no free playback substream\""));
+    }
+
+    #[test]
+    fn playback_post_without_the_control_token_is_refused_before_anything_else() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            handle_client(
+                stream,
+                Arc::new(Mutex::new(RobotStatus::new())),
+                Arc::new(Mutex::new(RawSensorStatus::disabled())),
+                Arc::new(Mutex::new(VoiceStatus::disabled())),
+            );
+        });
+
+        let mut client = TcpStream::connect(address).unwrap();
+        client
+            .write_all(
+                b"POST /api/v1/audio/play HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\n\r\nRIFF",
+            )
+            .unwrap();
+        let mut response = String::new();
+        client.read_to_string(&mut response).unwrap();
+        server.join().unwrap();
+
+        assert!(response.starts_with("HTTP/1.1 401 Unauthorized\r\n"));
+    }
+
+    #[test]
+    fn playback_post_on_an_unrelated_path_stays_rejected() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            handle_client(
+                stream,
+                Arc::new(Mutex::new(RobotStatus::new())),
+                Arc::new(Mutex::new(RawSensorStatus::disabled())),
+                Arc::new(Mutex::new(VoiceStatus::disabled())),
+            );
+        });
+
+        let mut client = TcpStream::connect(address).unwrap();
+        client
+            .write_all(
+                b"POST /api/v1/status HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n",
+            )
+            .unwrap();
+        let mut response = String::new();
+        client.read_to_string(&mut response).unwrap();
+        server.join().unwrap();
+
+        assert!(response.starts_with("HTTP/1.1 405 Method Not Allowed\r\n"));
     }
 }

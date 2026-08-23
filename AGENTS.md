@@ -107,6 +107,38 @@ for capture and playback on a USB card.
 depends on. Changing this file would silently remove the SmartControl channel
 `hombotd` uses today. See `docs/VOICE_STACK.md` before going near it.
 
+## Multiple agents can be editing this work tree at once
+
+This repository's working copy is not exclusive to one session. A concurrent
+agent (in this project's history: opencode, while another session was
+unavailable) can and has written substantial, well-formed code directly into
+`hombotd/src/` without the human operator asking for it in that session --
+including a new write-capable HTTP endpoint. If a file looks larger or
+different than you remember leaving it, check its modification time before
+assuming you are the one who wrote what is there, and read `git log` /
+`git diff` before syncing work-tree changes into the repository.
+
+This is not a reason to revert unfamiliar changes on sight. It is a reason to
+read them fully -- especially anything touching request handling, boot files
+or kernel modules -- against `SECURITY.md` and the rest of this file before
+building on top of it or deploying it to the physical device.
+
+## Every write-capable endpoint needs the token from `SECURITY.md`
+
+`SECURITY.md` states plainly: "Do not add unauthenticated actuator, upload,
+shell or reboot endpoints" and "require an unpredictable local token stored
+with mode 0600." `POST /api/v1/audio/play` -- the daemon's first endpoint that
+writes anything -- was added to this codebase once without that check, by a
+concurrent agent mid-session. `hombotd/src/auth.rs` is the fix: a token
+generated on first use at `/usr/data/frankenhomo/control.token` (mode 0600),
+checked via the `X-Hombot-Token` header, failing closed if generation ever
+fails. Any new write-capable endpoint must go through the same gate --
+`auth::authorized(&request)` -- before touching anything, not after.
+
+The token itself is retrieved the same way any other credential on this
+device is: `cat /usr/data/frankenhomo/control.token` over ssh, the trusted
+interface this control is bound to. It is never served over HTTP.
+
 ## Never run LG's built-in Smart Diagnosis as a passive test
 
 Known paths through it include driving, rotation and docking movements. This

@@ -9,7 +9,7 @@ Last updated: 2026-08-23.
 
 ## Deployed
 
-- `hombotd 0.1.9` is the active service, started from `rc.local`.
+- `hombotd 0.1.10` is the active service, started from `rc.local`.
 - Boot greeting: an audio clip plays on startup via a
   `# FRANKENHOMO_GREETING` block in `/usr/etc/rc.local`, installed with
   `tools/operator/deploy_greeting.py --at-boot`.
@@ -56,6 +56,19 @@ Last updated: 2026-08-23.
 - **Dashboard "sensor envelope" radar removed.** It was a static decorative
   graphic that never plotted anything -- see `AGENTS.md`'s evidence rule.
   Replaced with plain text tied to the real `/api/v1/sensors` state.
+
+- **`POST /api/v1/audio/play`**: the daemon's first write-capable endpoint --
+  plays an uploaded WAV or raw-PCM clip through a free sound card. Confirmed
+  live end to end: an unauthorized request (no `X-Hombot-Token` header) gets
+  `401` before any audio logic runs; an authorized request reaches the real
+  handler, which correctly reported `503` (no free playback substream) with
+  only the busy built-in codec present. A full play-through still needs a USB
+  audio device attached to test.
+- **Local control token**: generated on first use at
+  `/usr/data/frankenhomo/control.token`, mode `0600`, confirmed on the
+  device. This closes a real gap -- the endpoint above was added to this
+  codebase without one, which is exactly what `SECURITY.md`'s "no
+  unauthenticated upload endpoints" rule exists to prevent. See `AGENTS.md`.
 
 ## Decoded, not yet live-confirmed
 
