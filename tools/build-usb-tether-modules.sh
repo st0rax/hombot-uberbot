@@ -16,6 +16,12 @@ cd "$BUILD/kernel.rk"
 cd kernel-2.6.33
 cp ../files/arch/arm/configs/rk_hit_v2_ubif_defconfig .config
 
+# New ARM binutils treat `#` as a comment marker and reject the legacy section
+# flag spelling used by 2.6.33.  Convert it to the equivalent ELF spelling.
+grep -rl ', #alloc, #execinstr' arch/arm | while IFS= read -r source; do
+  sed -i 's|, #alloc, #execinstr|, "ax", %progbits|g' "$source"
+done
+
 # Linux 2.6.33 predates modern GCC-specific compiler headers.  The ARM kernel
 # still uses the GCC 4-compatible attribute definitions; expose that header
 # under the detected major version so current reproducible runners can build it.
