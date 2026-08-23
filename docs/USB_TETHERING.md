@@ -20,6 +20,50 @@ test, compare its `vermagic`, dependencies and exported-symbol CRCs with the
 running kernel and the stock `usbnet.ko`. Test with temporary `insmod` first;
 only a validated bundle may be added to startup.
 
+## Build status
+
+The reproducible build is green. Four legacy-toolchain problems stood between
+the 2013 source and a current runner, all fixed in
+`tools/build-usb-tether-modules.sh` by restoring the original semantics rather
+than by weakening a check:
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `.err` in `kernel/fork.o` | `put_user(0, ...)` -- GCC folds `register const ... asm("r2")` into a constant and picks another register, tripping the kernel's own `__asmeq()` guard | drop the `const`, as upstream did |
+| `timeconst.h` exit 255 | `defined(@array)` removed in Perl 5.22 | use the array's own truthiness |
+| `NX_GPIO_SetBit` undefined at link | plain `__inline` emits no out-of-line copy under C99; LG built with GCC 4.3 where GNU89 did | `KCFLAGS=-fgnu89-inline` |
+| `junk at end of line ... '#'` | `.section .piggydata,#alloc` -- legacy flag spelling | translate all spellings, then assert none survive |
+
+## ABI verification
+
+Live-test gate 1 no longer needs the robot. LG ships its own modules in the
+firmware, so every symbol that both a stock module and a freshly built one
+import can be compared offline:
+
+```sh
+python tools/verify-module-abi.py   --reference /path/to/stock/8192cu.ko /path/to/stock/rt3370sta.ko   -- out/usb-tether-modules/*.ko
+```
+
+Result for the current bundle:
+
+```text
+reference vermagic: '2.6.33.7.2-rt30 preempt mod_unload modversions ARMv6 '
+ok   usbnet.ko:     57/78 symbols match, 21 not covered by any reference module
+ok   cdc_ether.ko:   8/18 symbols match, 10 not covered by any reference module
+ok   rndis_host.ko: 16/33 symbols match, 17 not covered by any reference module
+```
+
+`vermagic` is byte-identical to LG's own modules and no compared CRC differs,
+which means the reconstructed tree reproduces LG's struct layouts across the
+networking, memory and locking symbols the two sides share.
+
+This is evidence, not proof. The uncovered symbols are ones no stock module
+imports, so nothing local can check them -- although most of `cdc_ether`'s and
+`rndis_host`'s uncovered symbols are `usbnet_*`, which come from the `usbnet.ko`
+built in the same run and are therefore consistent by construction. `insmod` on
+the device stays the final authority, and it fails closed: a CRC mismatch is
+refused, not loaded.
+
 ## Intended topology
 
 ```text
