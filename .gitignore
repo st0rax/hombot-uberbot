@@ -1,0 +1,56 @@
+# Rust build output
+target/
+**/target/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*_secret*
+*credentials*
+
+# Device captures, firmware and reverse-engineering working sets
+dumps/
+captures/
+firmware/
+vendor/
+pydeps*/
+*.bin
+*.img
+*.dump
+*.raw
+*.yuv
+*.tgz
+*.tar
+*.zip
+*.7z
+*.axf
+*.elf
+*.ko
+*.snd
+*.blk
+*.dat
+
+# Logs and local runtime state
+*.log
+*.pid
+*.jsonl
+live-*.txt
+device-*.txt
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Python caches used by development helpers
+__pycache__/
+*.py[cod]
+.venv/
+venv/
