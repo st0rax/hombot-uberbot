@@ -1,4 +1,4 @@
-name: Build HomBot USB tether modules
+name: Build HomBot USB audio modules
 
 on:
   workflow_dispatch:
@@ -22,13 +22,14 @@ jobs:
 
       - name: Build modules against reconstructed LG kernel
         run: |
-          tools/build-lg-kernel-modules.sh usb-tether-modules - \n            drivers/net/usb/usbnet.ko \n            drivers/net/usb/cdc_ether.ko \n            drivers/net/usb/rndis_host.ko
+          tools/build-lg-kernel-modules.sh usb-audio-modules \
+            tools/config-usb-audio.fragment \
+            'sound/usb/*.ko' 'sound/core/*.ko'
 
       - name: Upload module bundle
         uses: actions/upload-artifact@v4
         with:
-          name: hombot-usb-tether-2.6.33.7.2-rt30
-          path: out/usb-tether-modules/
+          name: hombot-usb-audio-2.6.33.7.2-rt30
+          path: out/usb-audio-modules/
           if-no-files-found: error
           retention-days: 30
-

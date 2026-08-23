@@ -1,0 +1,9 @@
+# USB audio, for giving the robot ears through the USB port instead of the
+# unpopulated microphone inputs on the WM8960.
+#
+# SND_USB_AUDIO selects SND_HWDEP and SND_RAWMIDI, so those come out as modules
+# too and have to be loaded alongside it. Nothing here changes a built-in
+# structure, which is what keeps the symbol CRCs compatible with the kernel
+# already running on the robot.
+CONFIG_SND_USB=y
+CONFIG_SND_USB_AUDIO=m
