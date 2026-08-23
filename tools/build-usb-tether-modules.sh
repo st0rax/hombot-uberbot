@@ -23,6 +23,13 @@ grep -rl ', #alloc, #execinstr' arch/arm | while IFS= read -r source; do
   sed -i 's|, #alloc, #execinstr|, "ax", %progbits|g' "$source"
 done
 
+# Perl 5.22 removed `defined(@array)`, which kernel/timeconst.pl still uses to
+# test whether a canned HZ table exists.  The bare array already has the right
+# truthiness, so drop the defined() exactly as upstream did.
+grep -q 'if (!defined(@val))' kernel/timeconst.pl
+sed -i 's|if (!defined(@val))|if (!@val)|' kernel/timeconst.pl
+perl -c kernel/timeconst.pl
+
 # GCC 4.3 honoured `register const ... asm("r2")` even when the initialiser was
 # a compile-time constant.  Current GCC folds such a variable into a constant and
 # is free to keep it in any register, which trips the kernel's own __asmeq()
