@@ -51,6 +51,31 @@ the remote link must expire any future motion lease locally.
 7. Unplug restores the previous route without reboot.
 8. No persistent boot change until three plug/unplug cycles pass.
 
+## Transient test manager
+
+`deploy/uberphone-tether.sh` implements the live-test gates without changing
+boot configuration. Install it and `deploy/udhcpc-uberphone.sh` under
+`/usr/data/frankenhomo/bin/`, and place the validated `cdc_ether.ko` and
+`rndis_host.ko` bundle under `/usr/data/frankenhomo/modules/usb-tether/`.
+
+```sh
+# Keep WLAN/default routing untouched; phone is a local relay link only.
+uberphone-tether.sh start link
+
+# Add the phone as a lower-priority (metric 50) Internet route.
+uberphone-tether.sh start uplink
+
+uberphone-tether.sh status
+uberphone-tether.sh log
+uberphone-tether.sh stop
+```
+
+The manager verifies each external module's `vermagic` against the running
+kernel before `insmod`, discovers the interface from its sysfs driver instead
+of assuming `usb0`, confines DHCP to that interface, records the pre-test route
+table and removes only the phone route on stop. `link` is deliberately the
+default for the first three plug/unplug tests.
+
 ## Power boundary
 
 USB data support does not imply that the HomBot USB port can charge a modern
