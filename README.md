@@ -5,29 +5,39 @@ The project keeps the original real-time motion and safety stack in place while
 replacing the obsolete unauthenticated web/camera layer with a small, auditable
 Rust daemon.
 
-The current daemon, `hombotd`, provides a low-latency camera UI and a read-only
-SmartControl status adapter. Actuator control is intentionally not exposed yet.
+**New to this repository? Start with [`START_HERE.md`](START_HERE.md)**, then
+[`STATUS_LIVE.md`](STATUS_LIVE.md) for what is actually verified on the
+physical device right now, then [`AGENTS.md`](AGENTS.md) before running
+anything against it.
+
+The current daemon, `hombotd`, provides a low-latency camera UI, live audio
+streaming, a read-only SmartControl status adapter, and a decoded (but not yet
+live-confirmed) subscriber for LG's own factory voice services. Actuator
+control is intentionally not exposed yet.
 
 ## Current status
 
-- Release 0.1.3 is deployed as the active service on the research device.
+Release **0.1.8** is deployed as the active service on the research device.
+See [`STATUS_LIVE.md`](STATUS_LIVE.md) for the up-to-date, verified-vs-decoded
+breakdown; it changes faster than this file. In short:
+
 - Runs as a static ARMv5TE/musl binary on the ARMv6 HomBot platform.
-- Streams 320x240 YUV422P color or Y8 grayscale from `/dev/camclone`.
-- A newer stream invalidates an older stream to avoid stale camera leases.
-- Reads robot status through the device-local LG SmartControl service. On the
-  observed legacy boot setup, the managed startup block restores standard
-  loopback before connecting.
-- SmartControl is connected: the long-lived port-4000 channel remains established
-  and the one-shot port-4002 admission channel is explicitly closed after enable.
-- Current `CONNECT_INIT` status fields are null. The API preserves that unknown
-  state instead of inventing robot, battery or mode values.
-- Exposes health and status endpoints plus a standalone browser FPV page.
+- Streams 320x240 YUV422P color or Y8 grayscale from `/dev/camclone`, and now
+  a continuous 16 kHz mono WAV audio stream from whichever USB sound card in
+  the robot's hub is free (`/stream.wav`, `/api/v1/audio`).
+- A newer camera or audio stream invalidates an older one of the same kind to
+  avoid stale leases.
+- Reads robot status through the device-local LG SmartControl service, and
+  reports live network interface state including whether an Android phone is
+  attached via USB tethering (`/api/v1/system`).
+- Exposes health, status, system, audio, voice and network endpoints plus a
+  standalone browser FPV/telemetry page with a spoken boot greeting.
 - Keeps the original `lg.srv` binary on the device and provides a documented
   rollback path.
-
-Latest bounded camera checks delivered 20/20 unique frames in both modes: 10.29
-FPS for color and 16.53 FPS for grayscale. Results describe the tested WLAN path,
-not a guaranteed performance level.
+- USB tethering (RNDIS/CDC) and USB audio kernel modules are built
+  reproducibly against a reconstructed kernel, ABI-verified offline, and
+  `insmod`-confirmed live on the device -- see
+  [`docs/USB_TETHERING.md`](docs/USB_TETHERING.md).
 
 This is experimental robotics software. It is not production-ready and it must
 not be used to bypass battery, cliff, wheel-drop, thermal or motion safety.
@@ -35,7 +45,11 @@ not be used to bypass battery, cliff, wheel-drop, thermal or motion safety.
 ## Repository layout
 
 ```text
+START_HERE.md            read this first
+STATUS_LIVE.md           what is verified on the device right now
+AGENTS.md                working rules, one per real incident
 hombotd/                 Rust daemon and embedded web UI
+tools/operator/          Windows-side scripts that drive the robot remotely
 deploy/                  guarded install and rollback scripts
 docs/ARCHITECTURE.md     component boundaries and data flows
 docs/PROTOCOL.md         reconstructed SmartControl framing
@@ -43,6 +57,9 @@ docs/REVERSE_ENGINEERING.md
 docs/HARDWARE.md         board, UART and expansion findings
 docs/ROADMAP.md          staged path from sidecar to recovery OS
 docs/USB_TETHERING.md    Android RNDIS/CDC driver and relay plan
+docs/VOICE_STACK.md      LG's dormant factory voice/keyword/SSL services
+docs/VOICE_PROTOCOL.md   their message formats, decoded from disassembly
+docs/OPERATOR_TOOLS.md   what the tools/operator/ scripts do and why
 .github/workflows/       reproducible ARM kernel-module build
 SECURITY.md              threat model and disclosure guidance
 CONTRIBUTING.md          developer workflow and evidence rules

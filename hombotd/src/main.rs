@@ -1,3 +1,5 @@
+mod audio;
+mod net;
 mod rawsensor;
 mod voice;
 
@@ -187,6 +189,7 @@ fn system_json() -> String {
             "\"uptime_seconds\":{},\"load_1m\":{},",
             "\"memory_total_kib\":{},\"memory_free_kib\":{},",
             "\"memory_available_estimate_kib\":{},\"process_rss_kib\":{},",
+            "\"network\":{},",
             "\"camera\":{{\"active_streams\":{},\"frames_since_start\":{},",
             "\"last_mode\":{},\"last_target_fps\":{}}}}}"
         ),
@@ -197,6 +200,7 @@ fn system_json() -> String {
         json_u64(mem_free),
         json_u64(mem_available_estimate),
         json_u64(rss_kib),
+        net::network_json(),
         ACTIVE_STREAMS.load(Ordering::Acquire),
         CAMERA_FRAMES.load(Ordering::Acquire),
         json_string(mode),
@@ -590,6 +594,16 @@ fn handle_client(
             "200 OK",
             "application/json; charset=utf-8",
             body.as_bytes(),
+        );
+        Ok(())
+    } else if path.starts_with("/stream.wav") {
+        audio::stream_audio(&mut stream, path)
+    } else if path.starts_with("/api/v1/audio") {
+        response(
+            &mut stream,
+            "200 OK",
+            "application/json; charset=utf-8",
+            audio::audio_json().as_bytes(),
         );
         Ok(())
     } else if path.starts_with("/frame.yuv") {
