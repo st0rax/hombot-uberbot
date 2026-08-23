@@ -23,6 +23,18 @@ grep -rl ', #alloc, #execinstr' arch/arm | while IFS= read -r source; do
   sed -i 's|, #alloc, #execinstr|, "ax", %progbits|g' "$source"
 done
 
+# GCC 4.3 honoured `register const ... asm("r2")` even when the initialiser was
+# a compile-time constant.  Current GCC folds such a variable into a constant and
+# is free to keep it in any register, which trips the kernel's own __asmeq()
+# register check -- e.g. `put_user(0, tsk->clear_child_tid)` in kernel/fork.c
+# compiled to `.ifnc r3,r2 ; .err`.  Upstream dropped the `const` on this operand
+# for exactly this reason (see arch/arm/include/asm/uaccess.h in current Linux),
+# so mirror that instead of weakening the register check itself.
+uaccess=arch/arm/include/asm/uaccess.h
+grep -q 'register const typeof(\*(p)) __r2 asm("r2")' "$uaccess"
+sed -i 's|register const typeof(\*(p)) __r2 asm("r2")|register typeof(*(p)) __r2 asm("r2")|' "$uaccess"
+! grep -q 'register const typeof(\*(p)) __r2 asm("r2")' "$uaccess"
+
 # Linux 2.6.33 predates modern GCC-specific compiler headers.  The ARM kernel
 # still uses the GCC 4-compatible attribute definitions; expose that header
 # under the detected major version so current reproducible runners can build it.
