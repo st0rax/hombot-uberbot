@@ -10,15 +10,24 @@ SmartControl status adapter. Actuator control is intentionally not exposed yet.
 
 ## Current status
 
+- Release 0.1.3 is deployed as the active service on the research device.
 - Runs as a static ARMv5TE/musl binary on the ARMv6 HomBot platform.
 - Streams 320x240 YUV422P color or Y8 grayscale from `/dev/camclone`.
 - A newer stream invalidates an older stream to avoid stale camera leases.
 - Reads robot status through the device-local LG SmartControl service. On the
-  observed legacy kernel, the daemon discovers the active interface address
-  because the nominal loopback route is unusable.
+  observed legacy boot setup, the managed startup block restores standard
+  loopback before connecting.
+- SmartControl is connected: the long-lived port-4000 channel remains established
+  and the one-shot port-4002 admission channel is explicitly closed after enable.
+- Current `CONNECT_INIT` status fields are null. The API preserves that unknown
+  state instead of inventing robot, battery or mode values.
 - Exposes health and status endpoints plus a standalone browser FPV page.
 - Keeps the original `lg.srv` binary on the device and provides a documented
   rollback path.
+
+Latest bounded camera checks delivered 20/20 unique frames in both modes: 10.29
+FPS for color and 16.53 FPS for grayscale. Results describe the tested WLAN path,
+not a guaranteed performance level.
 
 This is experimental robotics software. It is not production-ready and it must
 not be used to bypass battery, cliff, wheel-drop, thermal or motion safety.

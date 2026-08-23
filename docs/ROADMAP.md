@@ -1,5 +1,18 @@
 # Roadmap
 
+## Live checkpoint: release 0.1.3
+
+- Deployed as the active service on the research device.
+- Managed startup restores loopback and pins the device-local SmartControl
+  adapter to localhost.
+- SmartControl reports connected. Port 4000 remains established for status and
+  keepalive traffic; the one-shot port-4002 admission descriptor is closed after
+  `CONNECT/ENABLE` so it does not linger in `CLOSE_WAIT`.
+- `CONNECT_INIT` fields are currently null and remain represented as unknown.
+  No battery, state or mode values are synthesized.
+- Bounded stream checks produced 20/20 unique frames at 10.29 FPS color and 16.53
+  FPS grayscale on the tested WLAN path.
+
 ## Stage 1: observable sidecar
 
 - Stable camera streaming and health endpoints.
