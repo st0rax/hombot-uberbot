@@ -229,6 +229,16 @@ comparing them against each other with VFP math and a match-flag byte at
 history/secondary section at `+0x500`. Any future field hunting should treat
 the struct size as unknown-but-large, not 52 bytes.
 
+A second extension sits right behind the known window:
+`CMotionService::IsThereDoorFrame(short, SensorData_t const*, short)`
+(`0x2fe14`) reads halfword pairs at `0x34/0x36`, `0x38/0x3a`, `0x3c/0x3e`
+and feeds each pair into `MatchingProcess`;
+`CMotionService::InitCheckDoorFrameVariables(SensorData_t const*)`
+(`0x2feec`) writes defaults across `0x24..0x30` and `0x34..0x3c`. So offsets
+`0x34..0x3f` hold three more s16 sensor pairs -- most plausibly the
+door-frame / wall IR receivers used for docking-station recognition.
+`0x2a`/`0x2c` remain the only unassigned halfwords in the first window.
+
 Also recovered: the previously-missing second half of
 `PrintSensorData`'s argument wiring (`0x30a24`-`0x30ac0`). The final three
 stack slots are filled by `stm sp,{r1,r2,r3}` with `0x2e`, `0x30`, `0x26`
