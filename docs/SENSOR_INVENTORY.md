@@ -187,6 +187,54 @@ reads in the portion examined) -- confirming the remaining offsets
 (`0x26`/`0x28`/`0x2a`/`0x2c`/`0x30`) needs either more of this same function
 or `GenerateUSSObstaclePoint`, not yet done this pass.
 
+## Confirmed (second pass): USS and PSD channel offsets
+
+`CMapBuilder::GenerateUSSObstaclePoint(SensorData_t*, MapPoint_t*, int)`
+(`0x8944c`) read in full:
+
+| `SensorData_t` offset | Width | Evidence | Meaning |
+|---|---|---|---|
+| `0x26` | s16 | `ldrsh r2,[r7,#38]` (entry) and re-load at `0x89530` | ultrasonic distance #1 -- compared against a range cap built from `this+0xd4 ? 225 : min(this+0x8c+40, 240)` |
+| `0x28` | s16 | `ldrsh r11,[r7,#40]` at `0x894ac`, re-load at `0x89590`/`0x89648` | ultrasonic distance #2 -- same threshold family |
+
+Debounce pattern: each USS sub-channel has a 2-of-N counter in a
+`CMapBuilder` table at `0x2e4180` (fields `+0x0/+0x4/+0x8`); only the second
+consecutive hit produces a `MapPoint_t` write (`str r1,[r6,#8]`,
+`[r6,#0x14]`, `[r6,#0x20]`). Sensor index comes in as the `int` argument
+(`r3`), results land at `MapPoint+0x8+r5*12`.
+
+`CMapBuilder::GeneratePSDObstaclePoint` (`0x89760`) completed:
+
+| `SensorData_t` offset | Width | Evidence | Meaning |
+|---|---|---|---|
+| `0x2e` | s16 | `ldrsh r11,[r0,#46]` at `0x89780` | PSD reading channel 1 -- `>0` gates the projection loop, exactly as suspected |
+| `0x30` | s16 | `ldrsh r11,[r0,#48]` at `0x89960` | PSD reading channel 2 -- same `>0` gate, second ray/zone |
+
+Still unidentified in the `0x20..0x31` window: **`0x2a` and `0x2c`**.
+A whole-binary search for `ldrsh [rX,#42]/[#44]` finds no other
+`SensorData_t` consumer (hits at `0xeb7b4`/`0xecea0`/`0xee004` are GSM-DSP
+routines, unrelated structs). Best remaining hypothesis: wall-IR pair,
+consumed by `CWallFollowing` through helpers rather than direct halfword
+loads.
+
+## The struct is much larger than `0x32`
+
+`CMotionService::MatchingProcess(SensorData_t const*, float, float, short)`
+(`0x2fac8`) does `add r12, r0, #1280` and then reads halfword *pairs* at
+`+0x500+36/+40` and `+0x500+38/+42` (`0x524/0x528`, `0x526/0x52a`),
+comparing them against each other with VFP math and a match-flag byte at
+`this+0x55c`; on match it calls
+`CMotionService::MakeLocalMap(SensorData_t const*, float, float, short, short)`
+(`0x2f9e4`). So the layout continues far past `0x30` with at least one
+history/secondary section at `+0x500`. Any future field hunting should treat
+the struct size as unknown-but-large, not 52 bytes.
+
+Also recovered: the previously-missing second half of
+`PrintSensorData`'s argument wiring (`0x30a24`-`0x30ac0`). The final three
+stack slots are filled by `stm sp,{r1,r2,r3}` with `0x2e`, `0x30`, `0x26`
+-- consistent with the meanings above landing in the tail of the format
+string's numeric groups.
+
 ## Next concrete step
 
 1. Disassemble `CMapBuilder::GeneratePSDObstaclePoint(SensorData_t*, MapPoint_t*, int)`
@@ -200,3 +248,15 @@ or `GenerateUSSObstaclePoint`, not yet done this pass.
    in `CDataAccessService`'s constructor rather than grepping for direct `bl`
    call sites, since none exist in the plain disassembly (dispatch is
    evidently indirect here, same as elsewhere in this codebase).
+3. Identify `0x2a`/`0x2c`: disassemble
+   `CWallFollowing::FollowLeftWall(SensorData_t const*)` (`0xb0340`) and
+   `UpdateObstacleInformation` (`0xaf7c0`) looking for halfword access via
+   computed offsets (the direct `ldrsh #42/#44` grep is exhausted).
+4. Map the `+0x500` section: disassemble
+   `CMotionService::MakeLocalMap(SensorData_t const*, ...)` (`0x2f9e4`) and
+   `UpdateLocalMap1StepBefore(SensorData_t const*)` (`0x2fc18`), which also
+   diffs pose words `[r7,#0xc/0x10/0x14]` against stored state.
+5. Empirical cross-check (cheap, high yield): hombotd already receives live
+   158-byte frames. Log them while physically triggering bumper/cliff/USS
+   per zone and diff which bytes move -- this anchors the wire-frame layout
+   even before the converter function is found statically.
