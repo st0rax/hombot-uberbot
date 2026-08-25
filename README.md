@@ -1,5 +1,7 @@
 # HomBot UBERBOT
 
+> **Verbindliche Arbeitsgrundlage:** Vor jeder Arbeit ist [`AGENTS.md`](AGENTS.md) vollständig zu lesen und strikt zu befolgen. Projektspezifische Regeln gelten ergänzend; bei Konflikten gilt die strengere Schutzregel.
+
 UBERBOT is a reversible modernization project for the LG HomBot VR6340LV.
 The project keeps the original real-time motion and safety stack in place while
 replacing the obsolete unauthenticated web/camera layer with a small, auditable
