@@ -5,7 +5,11 @@ commit history. Update it when you change what is actually running or
 verified -- not when you merely write code for it. Every line is either
 something measured on the device or explicitly marked as not yet confirmed.
 
-Last updated: 2026-08-23.
+Last updated: 2026-08-26.
+Last device measurement: 2026-08-23. Nothing in this file is marked live
+unless that session measured it on the robot. Code that landed after that
+date stays in "In the tree, not on the device" until someone measures it
+again.
 
 ## Deployed
 
@@ -14,7 +18,14 @@ Last updated: 2026-08-23.
   `# FRANKENHOMO_GREETING` block in `/usr/etc/rc.local`, installed with
   `tools/operator/deploy_greeting.py --at-boot`.
 
-## Verified live, this session
+`main` currently builds as `0.1.11` (`hombotd/Cargo.toml` after `5278fe7`).
+That binary is not what the robot is running.
+
+## Verified live, last measured 2026-08-23
+
+These receipts are from the 23 August session. They have not been re-run
+today. Treat them as the last known good device state, not as a 26 August
+demo log.
 
 - **USB tethering**: `usbnet.ko`, `cdc_ether.ko`, `rndis_host.ko` built by
   `.github/workflows/build-usb-tether-modules.yml`, ABI-checked offline with
@@ -80,7 +91,36 @@ Last updated: 2026-08-23.
   captured, because the services only start when `Name.dat` names the voice
   variant (see `AGENTS.md`) -- `hombotd`'s `/api/v1/voice` endpoint reports
   `"live_confirmed": false` for exactly this reason and will keep doing so
-  until a real frame is observed.
+  until a real frame is observed. Do not touch `Name.dat` to force this.
+
+## In the tree, not on the device
+
+Neither of the 26 August UI pieces has been deployed or measured on the
+robot. Do not demo them as live.
+
+### `main` -- Voice-Telemetry for 0.1.11 (`5278fe7`, 2026-08-26)
+
+- `hombotd/Cargo.toml` version is `0.1.11`.
+- Dashboard panel for the existing `/api/v1/voice` payload: subscriber state,
+  last decoded sound bearing, last event, event counter, confirmation state.
+- Does not enable the voice subscriber, does not change boot settings, does
+  not expose actuator control.
+- Because no live voice frame has ever been captured, a 0.1.11 process would
+  still have to report the panel as not live-confirmed. Showing numbers there
+  without a device receipt would be invented telemetry.
+
+### PR #1 -- C2 shell (`feat/c2-page`, not merged)
+
+- https://github.com/st0rax/hombot-uberbot/pull/1
+- FPV stays at `GET /`. New `GET /c2` (and `/c2.html`) is a capability-slot
+  shell: camera / listen / speak / status as live-shaped slots; Come / Home /
+  Dock / D-pad marked in progress; map and autonomy marked planned.
+- Drive controls are visible and disabled. No motor path. No new actuator
+  endpoints.
+- Default is demo data (banner: no live robot data). `?live=1` is specified
+  to talk to existing hombotd APIs; that mode has not been measured on the
+  device.
+- Open GitHub issues: none. PR #1 is the only open review item.
 
 ## Known and open
 
@@ -93,10 +133,12 @@ Last updated: 2026-08-23.
   better because the search space is a dozen phrases instead of open
   dictation, but wake-word detection in live testing still missed more often
   than it caught. Whisper, run locally, is the planned replacement; not yet
-  set up anywhere.
+  set up anywhere. Trigger words are operator-side phrases, not LG factory
+  KWS.
 - **No motor/drive command path.** `hombotd` holds the SmartControl session
   and sends only keepalive traffic. Deliberately not built yet -- see
-  `AGENTS.md` on why this needs more care than the rest.
+  `AGENTS.md` on why this needs more care than the rest. PR #1 does not
+  change this.
 - **The chip's H.264 hardware encoder has no driver.** The SoC declares it
   (`nx_chip_p2120.h`); nothing in the kernel tree touches it. Camera frames
   are transmitted raw. See `docs/ROADMAP.md` for the measured impact.
@@ -105,6 +147,19 @@ Last updated: 2026-08-23.
   section in `AGENTS.md`.
 - **Sensor inventory is incomplete.** The RawSensor frame is 158 bytes wide;
   four fields are decoded (`hombotd/src/rawsensor.rs`), the rest are not.
+- **STATUS_LIVE itself was stale** from 2026-08-23 until this draft. README
+  already said 0.1.10 is on the device and 0.1.11 is in the tree; this file
+  had not caught up.
+
+## What you can show today without lying
+
+Show the robot on **0.1.10**: camera, SmartControl status, the 23 August
+audio/tether receipts, and the voice endpoint as decoded / not live-confirmed.
+If you open the 0.1.11 dashboard or `/c2`, say it is tree or PR, not the
+device.
+
+To turn Voice-Telemetry or C2 into live lines, someone has to run them on
+the robot and write the measurement here. This draft does not do that.
 
 ## Credentials
 
