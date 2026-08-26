@@ -55,6 +55,7 @@ button,input,select{font:inherit;color:inherit}
 .chip.live{color:var(--green);border-color:#3a6a48}
 .chip.work{color:var(--amber);border-color:#6a5420}
 .chip.plan{color:var(--dim);border-color:#2a3c42}
+.chip.demo{color:var(--amber);border-color:#6a5420}
 .video{flex:1}
 .viewport{position:relative;flex:1;min-height:0;background:#020405;display:grid;place-items:center}
 .viewport canvas{width:100%;height:100%;object-fit:contain;image-rendering:auto}
@@ -113,10 +114,10 @@ button,input,select{font:inherit;color:inherit}
     <div class="brand">UBERBOT <small>VR6340LV</small></div>
     <nav class="nav"><a href="/">FPV</a><b>C2</b></nav>
     <span class="sep">·</span>
-    <span class="stat"><i class="dot ok" id="linkDot"></i><b id="linkState">verbunden</b></span>
-    <span class="stat">SmartControl <b id="scState">online</b></span>
-    <span class="stat">Akku <span class="mini-bar"><i id="topBatt"></i></span> <b id="topBattPct">74%</b></span>
-    <span class="stat">Modus <b id="topMode">Saugen</b></span>
+    <span class="stat"><i class="dot" id="linkDot"></i><b id="linkState">Demo</b></span>
+    <span class="stat">SmartControl <b id="scState">Demo</b></span>
+    <span class="stat">Akku <span class="mini-bar"><i id="topBatt"></i></span> <b id="topBattPct">—</b></span>
+    <span class="stat">Modus <b id="topMode">—</b></span>
     <span class="spacer"></span>
     <span class="legend" title="Live geht jetzt · In Arbeit sichtbar, tot · Geplant nur Slot">
       <span class="chip live">Live</span>
@@ -132,16 +133,16 @@ button,input,select{font:inherit;color:inherit}
         <div class="head">
           <span class="zone">FEED</span>
           <span class="title">Kamera</span>
-          <span class="chip live">Live</span>
+          <span class="chip demo" id="cameraChip">Demo</span>
           <span class="spacer"></span>
-          <span id="streamLabel">Farbe 15 · Demo-Bild</span>
+          <span id="streamLabel">Demo-Bild</span>
         </div>
         <div class="viewport" id="viewport">
           <canvas id="view" width="320" height="240"></canvas>
           <div class="offline hidden" id="offline">Kein Bild</div>
           <div class="hud">
-            <span><b id="hudFps">15.0</b> fps</span>
-            <span><b id="hudLatency">66</b> ms</span>
+            <span><b id="hudFps">—</b> fps</span>
+            <span><b id="hudLatency">—</b> ms</span>
           </div>
         </div>
         <div class="transport">
@@ -168,7 +169,7 @@ button,input,select{font:inherit;color:inherit}
         <div class="body">
           <div class="head" style="border:0;height:auto;padding:0">
             <span class="title">Sprechen</span>
-            <span class="chip live">Live</span>
+            <span class="chip demo" id="speakChip">Demo</span>
           </div>
           <form class="speak" id="speakForm">
             <input id="speakText" maxlength="120" placeholder="Satz an den Roboter…" autocomplete="off">
@@ -177,7 +178,7 @@ button,input,select{font:inherit;color:inherit}
 
           <div class="head" style="border:0;height:auto;padding:0;margin-top:4px">
             <span class="title">Hören</span>
-            <span class="chip live">Live</span>
+            <span class="chip demo" id="listenChip">Demo</span>
           </div>
           <div class="listen">
             <button class="btn" id="audioToggle">Hören aus</button>
@@ -208,16 +209,16 @@ button,input,select{font:inherit;color:inherit}
         <div class="head">
           <span class="zone">STATUS</span>
           <span class="title">Status</span>
-          <span class="chip live">Live</span>
+          <span class="chip demo" id="statusChip">Demo</span>
         </div>
         <div class="body">
           <div class="kv">
             <span>Firmware</span><b id="firmware">RPMAIN</b>
-            <span>Tether</span><b id="relayLine">USB rndis0 · aktiv</b>
+            <span>Tether</span><b id="relayLine">—</b>
           </div>
           <span id="robotState" hidden>Reinigen</span>
-          <span id="battery" hidden>74%</span>
-          <span id="mode" hidden>Saugen</span>
+          <span id="battery" hidden>—</span>
+          <span id="mode" hidden>—</span>
           <i id="batteryBar" hidden></i>
           <div class="bearing">
             <div class="dial" id="dial" aria-label="Peilung">
@@ -228,7 +229,7 @@ button,input,select{font:inherit;color:inherit}
                 <text x="70" y="43" text-anchor="middle" fill="#8aa3a8" font-size="8" font-family="ui-sans-serif,system-ui,sans-serif">O</text>
                 <text x="40" y="74" text-anchor="middle" fill="#8aa3a8" font-size="8" font-family="ui-sans-serif,system-ui,sans-serif">S</text>
                 <text x="10" y="43" text-anchor="middle" fill="#8aa3a8" font-size="8" font-family="ui-sans-serif,system-ui,sans-serif">W</text>
-                <g id="needle" transform="rotate(142 40 40)">
+                <g id="needle" transform="rotate(0 40 40)" opacity=".25">
                   <polygon points="40,10 43,40 40,43 37,40" fill="#46f6e5"/>
                   <circle cx="40" cy="40" r="3" fill="#e7f8f7"/>
                 </g>
@@ -236,8 +237,8 @@ button,input,select{font:inherit;color:inherit}
             </div>
             <div>
               <div style="color:var(--muted)">Peilung</div>
-              <b class="mono" id="voiceBearing" style="font-size:20px">142°</b>
-              <div style="color:var(--dim);margin-top:2px" id="voiceNote">Factory-Voice, nur Anzeige</div>
+              <b class="mono" id="voiceBearing" style="font-size:20px">—</b>
+              <div style="color:var(--dim);margin-top:2px" id="voiceNote">Demo · keine Probe</div>
             </div>
           </div>
         </div>
@@ -272,7 +273,8 @@ function stamp(){return new Date().toLocaleTimeString('de-DE',{hour12:false})}
 function log(v){const e=document.createElement('div');e.textContent=stamp()+'  '+v;$('events').prepend(e);while($('events').children.length>5)$('events').lastChild.remove()}
 function tick(){set('clock',stamp());const s=Math.floor((Date.now()-startTime)/1000);set('uptime','Sitzung '+String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0'))}
 function setBatt(pct){$('batteryBar').style.width=pct+'%';$('topBatt').style.width=pct+'%';set('battery',pct+'%');set('topBattPct',pct+'%')}
-function setBearing(deg){$('needle').setAttribute('transform','rotate('+deg+' 40 40)');set('voiceBearing',deg+'°')}
+function setBearing(deg){$('needle').setAttribute('transform','rotate('+deg+' 40 40)');$('needle').setAttribute('opacity','1');set('voiceBearing',deg+'°')}
+function setChips(demo){['cameraChip','speakChip','listenChip','statusChip'].forEach(id=>{const el=$(id);if(!el)return;el.textContent=demo?'Demo':'Live';el.className='chip '+(demo?'demo':'live')})}
 function paintDemoFeed(){
   ctx.fillStyle='#0a1014';ctx.fillRect(0,0,W,H);
   ctx.fillStyle='#121a1e';
@@ -291,7 +293,7 @@ function paintColor(a){let u=Y,v=Y+(Y>>1),o=0;for(let p=0;p<Y;p++,o+=4){const c=
 function paintGray(a){for(let p=0,o=0;p<Y;p++,o+=4){px[o]=px[o+1]=px[o+2]=a[p];px[o+3]=255}ctx.putImageData(image,0,0);metrics()}
 function stopStream(note=true){if(controller){controller.abort();controller=null}set('streamLabel',DEMO?'Standby · Demo':'Standby');$('offline').classList.toggle('hidden',DEMO);if(DEMO)paintDemoFeed();if(note)log('Video gestoppt')}
 async function stream(fps,gray){
-  if(DEMO){set('streamLabel',(gray?'Mono ':'Farbe ')+fps+' · Demo-Bild');log('Stream-Modus '+(gray?'Mono ':'Farbe ')+fps+' (DEMO)');paintDemoFeed();set('hudFps',fps.toFixed(1));set('hudLatency','66');return}
+  if(DEMO){set('streamLabel',(gray?'Mono ':'Farbe ')+fps+' · Demo-Bild');log('Stream-Modus '+(gray?'Mono ':'Farbe ')+fps+' (DEMO, kein Messwert)');paintDemoFeed();set('hudFps','—');set('hudLatency','—');return}
   stopStream(false);controller=new AbortController();metricStart=performance.now();lastPaint=0;frames=bytes=0;
   const size=gray?Y:COLOR,endpoint=gray?'/stream.y8':'/stream.yuv';
   set('streamLabel','Verbinde '+fps+' fps');
@@ -330,19 +332,19 @@ $('audioToggle').onclick=()=>{
 $('audioCard').onchange=()=>{if(audioOn&&!DEMO){$('audioToggle').click();$('audioToggle').click()}};
 
 if(DEMO){
-  setBatt(74);setBearing(142);
+  setChips(true);
   log('Fahrt · in Arbeit, kein Motorpfad');
-  log('Peilung 142°');
-  log('Tether USB · aktiv');
-  log('Kamera · Live (DEMO-Bild)');
+  log('Demo · keine Live-Zahlen');
   log('C2-Hülle bereit');
   paintDemoFeed();
 }else{
+  setChips(false);
   $('demoBanner').hidden=true;
+  $('linkDot').classList.add('ok');
   set('linkState','prüfe');set('scState','—');set('topMode','—');set('robotState','—');
   set('battery','—');set('mode','—');set('firmware','—');set('relayLine','kein Tether');
   set('voiceBearing','—');set('voiceNote','keine Probe');set('streamLabel','Standby');
-  set('hudFps','0.0');set('hudLatency','—');$('offline').classList.remove('hidden');
+  set('hudFps','—');set('hudLatency','—');$('offline').classList.remove('hidden');
   $('audioCard').innerHTML='<option value="">keine Karte</option>';
   log('Live-Modus · warte auf hombotd');
 }
