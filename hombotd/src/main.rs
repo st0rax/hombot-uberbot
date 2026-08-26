@@ -569,6 +569,9 @@ fn handle_client(
     let result = if path == "/" || path.starts_with("/index.html") {
         response(&mut stream, "200 OK", "text/html; charset=utf-8", UI);
         Ok(())
+    } else if path == "/c2" || path.starts_with("/c2?") || path.starts_with("/c2.html") {
+        response(&mut stream, "200 OK", "text/html; charset=utf-8", C2_UI);
+        Ok(())
     } else if path.starts_with("/healthz") {
         let state = status
             .lock()
@@ -762,6 +765,7 @@ canvas.addEventListener('dblclick',fullscreen);setInterval(refreshStatus,1000);r
 </script></body></html>"###;
 
 const UI: &[u8] = include_bytes!("../ui/index.html");
+const C2_UI: &[u8] = include_bytes!("../ui/c2.html");
 
 #[cfg(test)]
 mod tests {
@@ -934,5 +938,56 @@ mod tests {
         assert!(ui.contains("voiceEvent"));
         assert!(ui.contains("voiceEvents"));
         assert!(ui.contains("READ-ONLY TELEMETRY"));
+    }
+
+    #[test]
+    fn c2_page_is_a_shell_not_a_motor_console() {
+        let ui = std::str::from_utf8(C2_UI).expect("c2 page must be UTF-8");
+        assert!(ui.contains("COMMAND"));
+        assert!(ui.contains("Funktion wird erarbeitet"));
+        assert!(ui.contains("href=\"/\""));
+        assert!(ui.contains("Kommen"));
+        assert!(ui.contains("disabled"));
+    }
+
+    #[test]
+    fn c2_route_serves_the_command_shell_and_leaves_fpv_on_root() {
+        fn get(path: &str) -> String {
+            let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+            let address = listener.local_addr().unwrap();
+            let server = thread::spawn(move || {
+                let (stream, _) = listener.accept().unwrap();
+                handle_client(
+                    stream,
+                    Arc::new(Mutex::new(RobotStatus::new())),
+                    Arc::new(Mutex::new(RawSensorStatus::new())),
+                    Arc::new(Mutex::new(VoiceStatus::new())),
+                );
+            });
+            let mut client = TcpStream::connect(address).unwrap();
+            let request = format!(
+                "GET {path} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+            );
+            client.write_all(request.as_bytes()).unwrap();
+            let mut response = String::new();
+            client.read_to_string(&mut response).unwrap();
+            server.join().unwrap();
+            response
+        }
+
+        let fpv = get("/");
+        assert!(fpv.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(fpv.contains("text/html"));
+        assert!(fpv.contains("FORWARD OPTICAL FEED"));
+
+        let c2 = get("/c2");
+        assert!(c2.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(c2.contains("text/html"));
+        assert!(c2.contains("COMMAND"));
+        assert!(c2.contains("Funktion wird erarbeitet"));
+
+        let live = get("/c2?live=1");
+        assert!(live.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(live.contains("COMMAND"));
     }
 }

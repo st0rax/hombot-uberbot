@@ -16,6 +16,7 @@ hardware abstraction layer. It never opens the Micom UART.
 ## Endpoints
 
 - `GET /` – standalone FPV page
+- `GET /c2` – command-and-control shell (capability slots; motors not live)
 - `GET /healthz` – read-only JSON health response
 - `GET /api/v1/status` – live SmartControl status as JSON
 - `GET /frame.yuv` – one 320×240 YUV422P frame
