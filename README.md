@@ -19,8 +19,12 @@ control is intentionally not exposed yet.
 
 ## Current status
 
-Release **0.1.10** is deployed as the active service on the research device.
-See [`STATUS_LIVE.md`](STATUS_LIVE.md) for the up-to-date, verified-vs-decoded
+Release **0.1.10** remains the active service on the research device. The
+working tree prepares **0.1.11**, which adds a read-only Voice-Telemetry panel
+for the existing `/api/v1/voice` data: subscriber state, last decoded sound
+bearing, last event, event counter and confirmation state. It does not enable
+the subscriber, alter boot settings or expose actuator control. See
+[`STATUS_LIVE.md`](STATUS_LIVE.md) for the up-to-date, verified-vs-decoded
 breakdown; it changes faster than this file. In short:
 
 - Runs as a static ARMv5TE/musl binary on the ARMv6 HomBot platform.

@@ -925,4 +925,14 @@ mod tests {
 
         assert!(response.starts_with("HTTP/1.1 405 Method Not Allowed\r\n"));
     }
+
+    #[test]
+    fn dashboard_exposes_read_only_voice_event_and_bearing_telemetry() {
+        let ui = std::str::from_utf8(UI).expect("dashboard must be UTF-8");
+        assert!(ui.contains("/api/v1/voice"));
+        assert!(ui.contains("voiceBearing"));
+        assert!(ui.contains("voiceEvent"));
+        assert!(ui.contains("voiceEvents"));
+        assert!(ui.contains("READ-ONLY TELEMETRY"));
+    }
 }
