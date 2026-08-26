@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070b0e">
+<title>UBERBOT C2 · VR6340LV</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#070b0e;
+  --panel:#0c1418;
+  --panel2:#0a1216;
+  --line:#1d3940;
+  --cyan:#46f6e5;
+  --green:#99ff8a;
+  --amber:#ffd166;
+  --red:#ff5f75;
+  --muted:#8aa3a8;
+  --dim:#5e787e;
+  --text:#e7f8f7;
+  --ink:#091115;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font:12px/1.35 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select{font:inherit;color:inherit}
+.shell{height:100%;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:8px;padding:8px 10px 6px}
+.banner{display:flex;align-items:center;gap:10px;padding:5px 10px;background:#2a2010;border:1px solid #6a5420;color:var(--amber);letter-spacing:.04em}
+.banner b{font-size:12px}
+.banner span{color:#d9c48a}
+.top{display:flex;align-items:center;gap:14px;height:40px;padding:0 12px;background:var(--ink);border:1px solid var(--line)}
+.brand{font-weight:700;font-size:15px;color:var(--cyan);letter-spacing:.08em}
+.brand small{color:var(--muted);font-weight:500;letter-spacing:.04em;margin-left:8px}
+.sep{color:#2a4a50}
+.stat{display:inline-flex;align-items:center;gap:6px;color:var(--muted);white-space:nowrap}
+.stat b{color:var(--text);font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 7px currentColor}
+.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+.mini-bar{width:52px;height:6px;background:#173034;display:inline-block;vertical-align:middle}
+.mini-bar i{display:block;height:100%;background:var(--cyan);width:0}
+.spacer{flex:1}
+.clock{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c5e4e2;font-variant-numeric:tabular-nums}
+.nav a{color:var(--muted);text-decoration:none;margin-right:10px}
+.nav a:hover{color:var(--cyan)}
+.nav b{color:var(--cyan)}
+.main{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 338px;gap:8px}
+.col{min-height:0;display:flex;flex-direction:column;gap:8px}
+.panel{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.head{display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;border-bottom:1px solid var(--line);color:var(--muted);flex-shrink:0}
+.head .zone{color:var(--cyan);font-weight:700;letter-spacing:.1em;font-size:12px}
+.head .title{color:var(--text)}
+.head .reason{margin-left:auto;color:var(--dim);font-size:12px}
+.chip{display:inline-flex;align-items:center;height:18px;padding:0 6px;border:1px solid;letter-spacing:.04em;font-size:11px;line-height:1;flex-shrink:0}
+.chip.live{color:var(--green);border-color:#3a6a48}
+.chip.work{color:var(--amber);border-color:#6a5420}
+.chip.plan{color:var(--dim);border-color:#2a3c42}
+.video{flex:1}
+.viewport{position:relative;flex:1;min-height:0;background:#020405;display:grid;place-items:center}
+.viewport canvas{width:100%;height:100%;object-fit:contain;image-rendering:auto}
+.hud{position:absolute;left:8px;top:8px;right:8px;display:flex;justify-content:space-between;pointer-events:none;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#c5e4e2;text-shadow:0 1px 2px #000}
+.hud b{color:#fff;font-weight:600}
+.offline{position:absolute;color:var(--dim);text-align:center;pointer-events:none}
+.offline.hidden{display:none}
+.transport{display:flex;gap:6px;padding:7px;flex-wrap:wrap;border-top:1px solid var(--line)}
+.btn,button.btn{border:1px solid #285158;background:#0c1d21;color:#c5dddc;padding:6px 10px;cursor:pointer}
+.btn:hover,.btn.active{border-color:var(--cyan);color:#fff;background:#123137}
+.btn.stop{border-color:#62313a}
+.btn.stop:hover{border-color:var(--red)}
+.btn:disabled{opacity:.42;cursor:not-allowed;pointer-events:none}
+.planned{display:grid;grid-template-columns:1fr 1fr;gap:8px;height:108px;flex-shrink:0}
+.slot{border:1px dashed #2a454c;background:#080d10;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.slot .ghost{flex:1;display:grid;place-items:center;color:#3d585e;font-size:12px;text-align:center}
+.slot .ghost em{display:block;font-style:normal;color:#4e6c72;margin-top:4px}
+.deck{flex:0 0 auto}
+.body{padding:8px 10px;display:flex;flex-direction:column;gap:8px}
+.drive-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.halt{grid-column:1/-1;background:#2a1014;border:1px solid var(--red);color:#ff8a9a;font-weight:700;letter-spacing:.08em;padding:8px 10px;opacity:.9 !important}
+.pad{display:grid;grid-template-columns:28px 28px 28px;grid-template-rows:24px 24px 24px;gap:3px;justify-content:center;margin:2px 0}
+.pad button{border:1px solid #2a454c;background:#0c1519;color:#6f8b90;font-size:12px;padding:0}
+.note{color:var(--amber);font-size:12px}
+.speak{display:flex;gap:6px}
+.speak input{flex:1;min-width:0;background:#070d10;border:1px solid #285158;padding:6px 8px;color:var(--text)}
+.speak input::placeholder{color:#5e787e}
+.listen{display:flex;gap:6px;align-items:center}
+.listen select{flex:1;min-width:0;background:#0c1d21;border:1px solid #285158;padding:6px 8px;color:#c5dddc}
+.kv{display:grid;grid-template-columns:76px 1fr;gap:4px 10px;align-items:center}
+.kv span{color:var(--muted)}
+.kv b{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+.kv b.mono,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.bar{height:7px;background:#173034}
+.bar i{display:block;height:100%;width:0;background:var(--cyan)}
+.bearing{display:flex;align-items:center;gap:10px}
+.dial{width:72px;height:72px;flex-shrink:0}
+.dial svg{width:100%;height:100%;display:block}
+.events{flex:1;min-height:0;overflow:hidden;padding:6px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:12px;line-height:1.55;color:var(--muted);background:var(--panel2)}
+.events div:first-child{color:#c5dddc}
+.foot{display:flex;gap:14px;color:var(--dim);font-size:12px;padding:0 4px}
+.foot b{color:#7a969b;font-weight:600}
+@media(max-width:880px){
+  html,body{overflow:auto;height:auto}
+  .shell{height:auto}
+  .main{grid-template-columns:1fr}
+  .viewport{min-height:240px;aspect-ratio:4/3}
+  .clock{display:none}
+}
+</style>
+</head>
+<body>
+<main class="shell">
+  <div class="banner" id="demoBanner"><b>DEMO</b><span>Keine Live-Daten vom Roboter · C2-Hülle, Fähigkeiten sitzen in festen Slots</span></div>
+  <header class="top">
+    <div class="brand">UBERBOT <small>VR6340LV</small></div>
+    <nav class="nav"><a href="/">FPV</a><b>C2</b></nav>
+    <span class="sep">·</span>
+    <span class="stat"><i class="dot ok" id="linkDot"></i><b id="linkState">verbunden</b></span>
+    <span class="stat">SmartControl <b id="scState">online</b></span>
+    <span class="stat">Akku <span class="mini-bar"><i id="topBatt"></i></span> <b id="topBattPct">74%</b></span>
+    <span class="stat">Modus <b id="topMode">Saugen</b></span>
+    <span class="spacer"></span>
+    <span class="clock" id="clock">--:--:--</span>
+  </header>
+
+  <section class="main">
+    <div class="col">
+      <article class="panel video">
+        <div class="head">
+          <span class="zone">FEED</span>
+          <span class="title">Kamera</span>
+          <span class="chip live">Live</span>
+          <span class="spacer"></span>
+          <span id="streamLabel">Farbe 15 · Demo-Bild</span>
+        </div>
+        <div class="viewport" id="viewport">
+          <canvas id="view" width="320" height="240"></canvas>
+          <div class="offline hidden" id="offline">Kein Bild</div>
+          <div class="hud">
+            <span><b id="hudFps">15.0</b> fps</span>
+            <span><b id="hudLatency">66</b> ms</span>
+          </div>
+        </div>
+        <div class="transport">
+          <button class="btn" data-mode="color" data-fps="10">Farbe 10</button>
+          <button class="btn active" data-mode="color" data-fps="15">Farbe 15</button>
+          <button class="btn" data-mode="gray" data-fps="20">Mono 20</button>
+          <button class="btn" data-mode="gray" data-fps="30">Mono 30</button>
+          <button class="btn stop" id="stop">Stop</button>
+          <button class="btn" id="full">Vollbild</button>
+        </div>
+      </article>
+      <div class="planned">
+        <div class="slot">
+          <div class="head" style="border:0;height:auto;padding:0 0 6px">
+            <span class="zone">MAP</span>
+            <span class="title">Karte / Pose</span>
+            <span class="chip plan">Geplant</span>
+          </div>
+          <div class="ghost">Slot frei<em>Keine Karte, keine Pose</em></div>
+        </div>
+        <div class="slot">
+          <div class="head" style="border:0;height:auto;padding:0 0 6px">
+            <span class="zone">AUTO</span>
+            <span class="title">Autonomie</span>
+            <span class="chip plan">Geplant</span>
+          </div>
+          <div class="ghost">Slot frei<em>Kein autonomer Modus</em></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <aside class="panel deck">
+        <div class="head">
+          <span class="zone">COMMAND</span>
+          <span class="title">Befehl</span>
+        </div>
+        <div class="body">
+          <div class="head" style="border:0;height:auto;padding:0">
+            <span class="title">Fahrt</span>
+            <span class="chip work">In Arbeit</span>
+          </div>
+          <div class="drive-grid">
+            <button class="btn" disabled title="Funktion wird erarbeitet">Kommen</button>
+            <button class="btn" disabled title="Funktion wird erarbeitet">Heim</button>
+            <button class="btn" disabled title="Funktion wird erarbeitet">Dock</button>
+            <button class="btn halt" disabled id="halt">Halt</button>
+          </div>
+          <div class="pad" aria-label="Steuerkreuz" title="Funktion wird erarbeitet">
+            <span></span><button disabled>▲</button><span></span>
+            <button disabled>◀</button><button disabled>●</button><button disabled>▶</button>
+            <span></span><button disabled>▼</button><span></span>
+          </div>
+          <div class="note">Funktion wird erarbeitet · kein Motorpfad</div>
+
+          <div class="head" style="border:0;height:auto;padding:0;margin-top:4px">
+            <span class="title">Sprechen</span>
+            <span class="chip live">Live</span>
+          </div>
+          <form class="speak" id="speakForm">
+            <input id="speakText" maxlength="120" placeholder="Satz an den Roboter…" autocomplete="off">
+            <button class="btn" type="submit" id="speakSend">Senden</button>
+          </form>
+
+          <div class="head" style="border:0;height:auto;padding:0;margin-top:4px">
+            <span class="title">Hören</span>
+            <span class="chip live">Live</span>
+          </div>
+          <div class="listen">
+            <button class="btn" id="audioToggle">Hören aus</button>
+            <select id="audioCard"><option value="1">Karte 1 (USB)</option><option value="0">Karte 0 (intern)</option></select>
+            <audio id="audioEl" preload="none"></audio>
+          </div>
+        </div>
+      </aside>
+
+      <aside class="panel" style="flex:0 0 auto">
+        <div class="head">
+          <span class="zone">STATUS</span>
+          <span class="title">Status</span>
+          <span class="chip live">Live</span>
+        </div>
+        <div class="body">
+          <div class="kv">
+            <span>Zustand</span><b id="robotState">Reinigen</b>
+            <span>Akku</span><b class="mono"><span id="battery">74%</span></b>
+          </div>
+          <div class="bar"><i id="batteryBar"></i></div>
+          <div class="kv">
+            <span>Modus</span><b id="mode">Saugen</b>
+            <span>Firmware</span><b id="firmware">RPMAIN</b>
+            <span>Tether</span><b id="relayLine">USB rndis0 · aktiv</b>
+          </div>
+          <div class="bearing">
+            <div class="dial" id="dial" aria-label="Peilung">
+              <svg viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="34" fill="#070d10" stroke="#1d3940"/>
+                <circle cx="40" cy="40" r="26" fill="none" stroke="#15282c"/>
+                <text x="40" y="14" text-anchor="middle" fill="#8aa3a8" font-size="8" font-family="ui-sans-serif,system-ui,sans-serif">N</text>
+                <text x="70" y="43" text-anchor="middle" fill="#8aa3a8" font-size="8" font-family="ui-sans-serif,system-ui,sans-serif">O</text>
+                <text x="40" y="74" text-anchor="middle" fill="#8aa3a8" font-size="8" font-family="ui-sans-serif,system-ui,sans-serif">S</text>
+                <text x="10" y="43" text-anchor="middle" fill="#8aa3a8" font-size="8" font-family="ui-sans-serif,system-ui,sans-serif">W</text>
+                <g id="needle" transform="rotate(142 40 40)">
+                  <polygon points="40,10 43,40 40,43 37,40" fill="#46f6e5"/>
+                  <circle cx="40" cy="40" r="3" fill="#e7f8f7"/>
+                </g>
+              </svg>
+            </div>
+            <div>
+              <div style="color:var(--muted)">Peilung</div>
+              <b class="mono" id="voiceBearing" style="font-size:20px">142°</b>
+              <div style="color:var(--dim);margin-top:2px" id="voiceNote">Factory-Voice, nur Anzeige</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <aside class="panel" style="flex:1">
+        <div class="head">
+          <span class="zone">LOG</span>
+          <span class="title">Protokoll</span>
+        </div>
+        <div class="events" id="events"></div>
+      </aside>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span><b>Res</b> 320×240</span>
+    <span><b>Policy</b> Beobachten · Motoren nicht live</span>
+    <span><b>Daemon</b> hombotd</span>
+    <span class="spacer"></span>
+    <span id="uptime">Sitzung 00:00</span>
+  </footer>
+</main>
+<script>
+'use strict';
+const DEMO = new URLSearchParams(location.search).get('live') !== '1';
+const W=320,H=240,Y=W*H,COLOR=Y*2,$=id=>document.getElementById(id);
+const canvas=$('view'),ctx=canvas.getContext('2d',{alpha:false}),image=ctx.createImageData(W,H),px=image.data,startTime=Date.now();
+let controller=null,frames=0,bytes=0,lastPaint=0,metricStart=0,audioOn=false;
+function set(id,v){$(id).textContent=v}
+function stamp(){return new Date().toLocaleTimeString('de-DE',{hour12:false})}
+function log(v){const e=document.createElement('div');e.textContent=stamp()+'  '+v;$('events').prepend(e);while($('events').children.length>5)$('events').lastChild.remove()}
+function tick(){set('clock',stamp());const s=Math.floor((Date.now()-startTime)/1000);set('uptime','Sitzung '+String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0'))}
+function setBatt(pct){$('batteryBar').style.width=pct+'%';$('topBatt').style.width=pct+'%';set('battery',pct+'%');set('topBattPct',pct+'%')}
+function setBearing(deg){$('needle').setAttribute('transform','rotate('+deg+' 40 40)');set('voiceBearing',deg+'°')}
+function paintDemoFeed(){
+  ctx.fillStyle='#0a1216';ctx.fillRect(0,0,W,H);
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#10181c');g.addColorStop(.46,'#1a2a2e');g.addColorStop(.47,'#24363c');g.addColorStop(1,'#0c181c');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#121c20';ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(118,112);ctx.lineTo(202,112);ctx.lineTo(W,H);ctx.fill();
+  ctx.strokeStyle='rgba(70,246,229,.18)';ctx.lineWidth=1;
+  for(let i=0;i<8;i++){const t=i/7;const y=112+(H-112)*t*t;ctx.beginPath();ctx.moveTo(118-(118*t),y);ctx.lineTo(202+(118*t),y);ctx.stroke()}
+  ctx.beginPath();ctx.moveTo(118,112);ctx.lineTo(0,H);ctx.moveTo(160,112);ctx.lineTo(160,H);ctx.moveTo(202,112);ctx.lineTo(W,H);ctx.stroke();
+  ctx.fillStyle='#182428';ctx.fillRect(132,58,56,54);ctx.fillStyle='#0e161a';ctx.fillRect(142,70,36,42);
+  ctx.fillStyle='#46f6e5';ctx.globalAlpha=.35;ctx.fillRect(8,8,36,3);ctx.globalAlpha=1;
+  ctx.fillStyle='rgba(255,209,102,.85)';ctx.font='bold 11px ui-sans-serif,system-ui,sans-serif';ctx.fillText('DEMO',12,28);
+}
+function metrics(){const now=performance.now();if(lastPaint)set('hudLatency',String(Math.round(now-lastPaint)));lastPaint=now;frames++;if(now-metricStart>=1000){const sec=(now-metricStart)/1000;set('hudFps',(frames/sec).toFixed(1));frames=bytes=0;metricStart=now}}
+function paintColor(a){let u=Y,v=Y+(Y>>1),o=0;for(let p=0;p<Y;p++,o+=4){const c=p>>1,y=a[p],du=a[u+c]-128,dv=a[v+c]-128;px[o]=y+((351*dv)>>8);px[o+1]=y-((86*du+179*dv)>>8);px[o+2]=y+((443*du)>>8);px[o+3]=255}ctx.putImageData(image,0,0);metrics()}
+function paintGray(a){for(let p=0,o=0;p<Y;p++,o+=4){px[o]=px[o+1]=px[o+2]=a[p];px[o+3]=255}ctx.putImageData(image,0,0);metrics()}
+function stopStream(note=true){if(controller){controller.abort();controller=null}set('streamLabel',DEMO?'Standby · Demo':'Standby');$('offline').classList.toggle('hidden',DEMO);if(DEMO)paintDemoFeed();if(note)log('Video gestoppt')}
+async function stream(fps,gray){
+  if(DEMO){set('streamLabel',(gray?'Mono ':'Farbe ')+fps+' · Demo-Bild');log('Stream-Modus '+(gray?'Mono ':'Farbe ')+fps+' (DEMO)');paintDemoFeed();set('hudFps',fps.toFixed(1));set('hudLatency','66');return}
+  stopStream(false);controller=new AbortController();metricStart=performance.now();lastPaint=0;frames=bytes=0;
+  const size=gray?Y:COLOR,endpoint=gray?'/stream.y8':'/stream.yuv';
+  set('streamLabel','Verbinde '+fps+' fps');
+  try{
+    const r=await fetch(endpoint+'?fps='+fps,{signal:controller.signal,cache:'no-store'});
+    if(!r.ok)throw Error('HTTP '+r.status);
+    const reader=r.body.getReader();let frame=new Uint8Array(size),used=0;
+    set('streamLabel',(gray?'Mono':'Farbe')+' '+fps);
+    $('offline').classList.add('hidden');log('Kamera live');
+    while(true){const x=await reader.read();if(x.done)break;bytes+=x.value.length;let at=0;while(at<x.value.length){const take=Math.min(size-used,x.value.length-at);frame.set(x.value.subarray(at,at+take),used);used+=take;at+=take;if(used===size){(gray?paintGray:paintColor)(frame);used=0}}}
+  }catch(e){if(e.name!=='AbortError'){set('streamLabel','Stream-Fehler');$('offline').classList.remove('hidden');log('Video: '+e.message)}}
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');stream(+b.dataset.fps,b.dataset.mode==='gray')});
+$('stop').onclick=()=>stopStream();
+$('full').onclick=()=>$('viewport').requestFullscreen?.();
+canvas.ondblclick=()=>$('viewport').requestFullscreen?.();
+
+$('speakForm').onsubmit=async ev=>{
+  ev.preventDefault();
+  const text=$('speakText').value.trim();
+  if(!text)return;
+  if(DEMO){log('Sprechen (DEMO, nicht gesendet): '+text.slice(0,48));$('speakText').value='';return}
+  try{
+    const r=await fetch('/api/v1/audio/play',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text})});
+    if(!r.ok)throw Error('HTTP '+r.status);
+    log('Gesprochen: '+text.slice(0,48));$('speakText').value='';
+  }catch(e){log('Sprechen fehlgeschlagen: '+e.message)}
+};
+function setAudioButton(){$('audioToggle').textContent=audioOn?'Hören an':'Hören aus';$('audioToggle').classList.toggle('active',audioOn)}
+$('audioToggle').onclick=()=>{
+  audioOn=!audioOn;setAudioButton();
+  if(DEMO){log(audioOn?'Hören an (DEMO)':'Hören aus');return}
+  if(audioOn){const card=$('audioCard').value;if(card===''){audioOn=false;setAudioButton();return}$('audioEl').src='/stream.wav?card='+card;$('audioEl').play().catch(e=>{log('Audio: '+e.message);audioOn=false;setAudioButton()});log('Hören an')}
+  else{$('audioEl').pause();$('audioEl').removeAttribute('src');$('audioEl').load();log('Hören aus')}
+};
+$('audioCard').onchange=()=>{if(audioOn&&!DEMO){$('audioToggle').click();$('audioToggle').click()}};
+
+if(DEMO){
+  setBatt(74);setBearing(142);
+  log('Fahrt · in Arbeit, kein Motorpfad');
+  log('Peilung 142°');
+  log('Tether USB · aktiv');
+  log('Kamera · Live (DEMO-Bild)');
+  log('C2-Hülle bereit');
+  paintDemoFeed();
+}else{
+  $('demoBanner').hidden=true;
+  set('linkState','prüfe');set('scState','—');set('topMode','—');set('robotState','—');
+  set('battery','—');set('mode','—');set('firmware','—');set('relayLine','kein Tether');
+  set('voiceBearing','—');set('voiceNote','keine Probe');set('streamLabel','Standby');
+  set('hudFps','0.0');set('hudLatency','—');$('offline').classList.remove('hidden');
+  $('audioCard').innerHTML='<option value="">keine Karte</option>';
+  log('Live-Modus · warte auf hombotd');
+}
+setInterval(tick,1000);tick();
+</script>
+</body>
+</html>
