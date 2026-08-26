@@ -69,14 +69,12 @@ button,input,select{font:inherit;color:inherit}
 .btn.stop{border-color:#62313a}
 .btn.stop:hover{border-color:var(--red)}
 .btn:disabled{opacity:.42;cursor:not-allowed;pointer-events:none}
-.planned{display:grid;grid-template-columns:1fr 1fr;gap:8px;height:108px;flex-shrink:0}
-.slot{border:1px dashed #2a454c;background:#080d10;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
-.slot .ghost{flex:1;display:grid;place-items:center;color:#3d585e;font-size:12px;text-align:center}
-.slot .ghost em{display:block;font-style:normal;color:#4e6c72;margin-top:4px}
+.planned-line{display:flex;align-items:center;gap:8px;padding:6px 10px;color:var(--dim);border:1px dashed #2a454c;flex-shrink:0}
+.legend{display:inline-flex;align-items:center;gap:6px}
 .deck{flex:0 0 auto}
 .body{padding:8px 10px;display:flex;flex-direction:column;gap:8px}
 .drive-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.halt{grid-column:1/-1;background:#2a1014;border:1px solid var(--red);color:#ff8a9a;font-weight:700;letter-spacing:.08em;padding:8px 10px;opacity:.9 !important}
+.halt{grid-column:1/-1;background:#141618;border:1px solid #5a4a30;color:#c4b48a;font-weight:600;letter-spacing:.04em;padding:8px 10px}
 .pad{display:grid;grid-template-columns:28px 28px 28px;grid-template-rows:24px 24px 24px;gap:3px;justify-content:center;margin:2px 0}
 .pad button{border:1px solid #2a454c;background:#0c1519;color:#6f8b90;font-size:12px;padding:0}
 .note{color:var(--amber);font-size:12px}
@@ -120,6 +118,11 @@ button,input,select{font:inherit;color:inherit}
     <span class="stat">Akku <span class="mini-bar"><i id="topBatt"></i></span> <b id="topBattPct">74%</b></span>
     <span class="stat">Modus <b id="topMode">Saugen</b></span>
     <span class="spacer"></span>
+    <span class="legend" title="Live geht jetzt · In Arbeit sichtbar, tot · Geplant nur Slot">
+      <span class="chip live">Live</span>
+      <span class="chip work">In Arbeit</span>
+      <span class="chip plan">Geplant</span>
+    </span>
     <span class="clock" id="clock">--:--:--</span>
   </header>
 
@@ -150,23 +153,9 @@ button,input,select{font:inherit;color:inherit}
           <button class="btn" id="full">Vollbild</button>
         </div>
       </article>
-      <div class="planned">
-        <div class="slot">
-          <div class="head" style="border:0;height:auto;padding:0 0 6px">
-            <span class="zone">MAP</span>
-            <span class="title">Karte / Pose</span>
-            <span class="chip plan">Geplant</span>
-          </div>
-          <div class="ghost">Slot frei<em>Keine Karte, keine Pose</em></div>
-        </div>
-        <div class="slot">
-          <div class="head" style="border:0;height:auto;padding:0 0 6px">
-            <span class="zone">AUTO</span>
-            <span class="title">Autonomie</span>
-            <span class="chip plan">Geplant</span>
-          </div>
-          <div class="ghost">Slot frei<em>Kein autonomer Modus</em></div>
-        </div>
+      <div class="planned-line">
+        <span class="chip plan">Geplant</span>
+        <span>Karte · Autonomie</span>
       </div>
     </div>
 
@@ -178,23 +167,6 @@ button,input,select{font:inherit;color:inherit}
         </div>
         <div class="body">
           <div class="head" style="border:0;height:auto;padding:0">
-            <span class="title">Fahrt</span>
-            <span class="chip work">In Arbeit</span>
-          </div>
-          <div class="drive-grid">
-            <button class="btn" disabled title="Funktion wird erarbeitet">Kommen</button>
-            <button class="btn" disabled title="Funktion wird erarbeitet">Heim</button>
-            <button class="btn" disabled title="Funktion wird erarbeitet">Dock</button>
-            <button class="btn halt" disabled id="halt">Halt</button>
-          </div>
-          <div class="pad" aria-label="Steuerkreuz" title="Funktion wird erarbeitet">
-            <span></span><button disabled>▲</button><span></span>
-            <button disabled>◀</button><button disabled>●</button><button disabled>▶</button>
-            <span></span><button disabled>▼</button><span></span>
-          </div>
-          <div class="note">Funktion wird erarbeitet · kein Motorpfad</div>
-
-          <div class="head" style="border:0;height:auto;padding:0;margin-top:4px">
             <span class="title">Sprechen</span>
             <span class="chip live">Live</span>
           </div>
@@ -212,6 +184,23 @@ button,input,select{font:inherit;color:inherit}
             <select id="audioCard"><option value="1">Karte 1 (USB)</option><option value="0">Karte 0 (intern)</option></select>
             <audio id="audioEl" preload="none"></audio>
           </div>
+
+          <div class="head" style="border:0;height:auto;padding:0;margin-top:8px">
+            <span class="title">Fahrt</span>
+            <span class="chip work">In Arbeit</span>
+          </div>
+          <div class="drive-grid">
+            <button class="btn" disabled title="Funktion wird erarbeitet">Kommen</button>
+            <button class="btn" disabled title="Funktion wird erarbeitet">Heim</button>
+            <button class="btn" disabled title="Funktion wird erarbeitet">Dock</button>
+            <button class="btn halt" disabled id="halt">Halt · bald</button>
+          </div>
+          <div class="pad" aria-label="Steuerkreuz" title="Funktion wird erarbeitet">
+            <span></span><button disabled>▲</button><span></span>
+            <button disabled>◀</button><button disabled>●</button><button disabled>▶</button>
+            <span></span><button disabled>▼</button><span></span>
+          </div>
+          <div class="note">Funktion wird erarbeitet · kein Motorpfad</div>
         </div>
       </aside>
 
@@ -223,15 +212,13 @@ button,input,select{font:inherit;color:inherit}
         </div>
         <div class="body">
           <div class="kv">
-            <span>Zustand</span><b id="robotState">Reinigen</b>
-            <span>Akku</span><b class="mono"><span id="battery">74%</span></b>
-          </div>
-          <div class="bar"><i id="batteryBar"></i></div>
-          <div class="kv">
-            <span>Modus</span><b id="mode">Saugen</b>
             <span>Firmware</span><b id="firmware">RPMAIN</b>
             <span>Tether</span><b id="relayLine">USB rndis0 · aktiv</b>
           </div>
+          <span id="robotState" hidden>Reinigen</span>
+          <span id="battery" hidden>74%</span>
+          <span id="mode" hidden>Saugen</span>
+          <i id="batteryBar" hidden></i>
           <div class="bearing">
             <div class="dial" id="dial" aria-label="Peilung">
               <svg viewBox="0 0 80 80">
@@ -287,16 +274,17 @@ function tick(){set('clock',stamp());const s=Math.floor((Date.now()-startTime)/1
 function setBatt(pct){$('batteryBar').style.width=pct+'%';$('topBatt').style.width=pct+'%';set('battery',pct+'%');set('topBattPct',pct+'%')}
 function setBearing(deg){$('needle').setAttribute('transform','rotate('+deg+' 40 40)');set('voiceBearing',deg+'°')}
 function paintDemoFeed(){
-  ctx.fillStyle='#0a1216';ctx.fillRect(0,0,W,H);
-  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#10181c');g.addColorStop(.46,'#1a2a2e');g.addColorStop(.47,'#24363c');g.addColorStop(1,'#0c181c');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#121c20';ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(118,112);ctx.lineTo(202,112);ctx.lineTo(W,H);ctx.fill();
-  ctx.strokeStyle='rgba(70,246,229,.18)';ctx.lineWidth=1;
-  for(let i=0;i<8;i++){const t=i/7;const y=112+(H-112)*t*t;ctx.beginPath();ctx.moveTo(118-(118*t),y);ctx.lineTo(202+(118*t),y);ctx.stroke()}
-  ctx.beginPath();ctx.moveTo(118,112);ctx.lineTo(0,H);ctx.moveTo(160,112);ctx.lineTo(160,H);ctx.moveTo(202,112);ctx.lineTo(W,H);ctx.stroke();
-  ctx.fillStyle='#182428';ctx.fillRect(132,58,56,54);ctx.fillStyle='#0e161a';ctx.fillRect(142,70,36,42);
-  ctx.fillStyle='#46f6e5';ctx.globalAlpha=.35;ctx.fillRect(8,8,36,3);ctx.globalAlpha=1;
-  ctx.fillStyle='rgba(255,209,102,.85)';ctx.font='bold 11px ui-sans-serif,system-ui,sans-serif';ctx.fillText('DEMO',12,28);
+  ctx.fillStyle='#0a1014';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#121a1e';
+  for(let y=20;y<H;y+=20){ctx.fillRect(0,y,W,1)}
+  ctx.fillStyle='rgba(255,209,102,.9)';
+  ctx.font='bold 18px ui-sans-serif,system-ui,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('DEMO',W/2,H/2-4);
+  ctx.fillStyle='#6a8084';
+  ctx.font='11px ui-sans-serif,system-ui,sans-serif';
+  ctx.fillText('kein Live-Bild',W/2,H/2+14);
+  ctx.textAlign='left';
 }
 function metrics(){const now=performance.now();if(lastPaint)set('hudLatency',String(Math.round(now-lastPaint)));lastPaint=now;frames++;if(now-metricStart>=1000){const sec=(now-metricStart)/1000;set('hudFps',(frames/sec).toFixed(1));frames=bytes=0;metricStart=now}}
 function paintColor(a){let u=Y,v=Y+(Y>>1),o=0;for(let p=0;p<Y;p++,o+=4){const c=p>>1,y=a[p],du=a[u+c]-128,dv=a[v+c]-128;px[o]=y+((351*dv)>>8);px[o+1]=y-((86*du+179*dv)>>8);px[o+2]=y+((443*du)>>8);px[o+3]=255}ctx.putImageData(image,0,0);metrics()}
