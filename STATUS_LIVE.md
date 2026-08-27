@@ -126,6 +126,15 @@ These receipts are from the 23 August session. They were not re-run on
   are visible and disabled. No motor path.
 - Default is demo data. Not running on the robot as of 2026-08-27.
 
+### Stage-2 interlock gate (not deployed)
+
+- `GET /api/v1/interlocks` reports a fail-closed verdict. `allow_motion` is
+  false until cliff, bumper, wheel-drop, calibrated battery, and transport
+  are `clear`. Unknown is treated as a trip. There is still no motor path.
+  Bumper/cliff/wheel-drop are not decoded; this endpoint does not name wire
+  fields. Battery bytes stay raw; do not quote them as volts.
+- Tree only. Not on the device (still `hombotd` 0.1.10).
+
 ### Operator raw_record_hex logger (PR #2)
 
 - Capture helper for `docs/SENSOR_CAPTURE.md`. The 27 August session took 15
