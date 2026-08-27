@@ -33,7 +33,9 @@ the dates of individual measurements.
 
 The release criteria and evidence format for this stage are defined in
 [`MOTION_READINESS.md`](MOTION_READINESS.md). Until every mandatory item is
-fresh and positive, the movement lock stays closed.
+fresh and positive, the movement lock stays closed. The dated implementation
+and evidence gaps are tracked in
+[`MOTION_READINESS_GAPS.md`](MOTION_READINESS_GAPS.md).
 
 - Local authentication with a token stored mode `0600`.
 - Host/Origin validation and no wildcard CORS.

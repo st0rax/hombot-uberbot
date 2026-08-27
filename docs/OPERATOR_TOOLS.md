@@ -62,6 +62,7 @@ Desktop`).
 | `wakeword.py` | The single-purpose predecessor to `homebot.py`: one wake phrase, one canned answer, built to prove the loop before the full command set existed. |
 | `listen_pc.py` | Records from a named input device on this PC and runs it through Windows dictation. Exists because `SpeechRecognitionEngine.SetInputToDefaultAudioDevice()` silently produces no audio at all on some machines even when the intended device is the Windows default; recording explicitly with `sounddevice` and handing the recogniser a finished file is the reliable path. |
 | `log_sensors.py` | Polls `GET /api/v1/sensors` over ssh and appends `timestamp + raw_record_hex + optional label` to a local JSONL file. Capture helper for live sessions; does not decode the 158-byte frame. |
+| `motion_readiness_gate.py` | Offline, fail-closed evaluator for the motion-readiness evidence file. It never connects to the robot; missing, failed, stale, future or mixed-session receipts keep the gate locked. |
 
 ## Known limits, so the next person does not re-derive them
 

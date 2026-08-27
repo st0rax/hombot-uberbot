@@ -86,6 +86,7 @@ deploy/                  guarded install and rollback scripts
 docs/ARCHITECTURE.md     component boundaries and data flows
 docs/PROJECT_BOUNDARIES.md repository ownership and integration rules
 docs/MOTION_READINESS.md evidence gate before physical movement
+docs/MOTION_READINESS_GAPS.md current blockers and safe implementation order
 docs/PROTOCOL.md         reconstructed SmartControl framing
 docs/REVERSE_ENGINEERING.md
 docs/HARDWARE.md         board, UART and expansion findings

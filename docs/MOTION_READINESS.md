@@ -22,6 +22,34 @@ Record each live result in `STATUS_LIVE.md` with:
 A source-code test is not a live-device receipt. An owner report is useful
 context but does not substitute for a live sensor stimulus test.
 
+### Machine-enforced evaluation
+
+`tools/operator/motion_readiness_gate.py` evaluates the receipts without
+opening any network or device connection. It requires every check to belong
+to one test session and exact deployed version, and rejects missing, failed,
+malformed, future or stale receipts. Freshness limits are fixed by proximity
+to motion: 60 minutes for baseline/functions, 15 minutes for sensors/control
+safety and 2 minutes for the controlled first-motion envelope. They cannot be
+relaxed with a command-line option.
+
+Start with a complete pending template:
+
+```powershell
+python tools/operator/motion_readiness_gate.py --template
+```
+
+Evaluate a populated local evidence document:
+
+```powershell
+python tools/operator/motion_readiness_gate.py motion-readiness.json
+```
+
+Exit code `0` means `READY_FOR_BOUNDED_FIRST_MOTION`; exit code `2` means
+`LOCKED` or invalid evidence. The tool never sends a command to the robot and
+its output is not itself a live receipt. Evidence text must contain only a
+safe reference or measurement summary -- never credentials, tokens or device
+addresses.
+
 ## Gate A: known and recoverable baseline
 
 - [ ] The deployed `hombotd` version and configuration are known.
@@ -61,6 +89,7 @@ minimum:
 - [ ] Wheel-drop or lift detection responds and recovers, where fitted.
 - [ ] Cover/chassis contacts used by the safety policy respond and recover.
 - [ ] Charger/dock/power state used by motion policy is correctly identified.
+- [ ] Thermal state used by the vendor safety path is healthy and preserved.
 - [ ] Simultaneous or contradictory safety inputs fail closed.
 - [ ] A frozen or stale sensor stream is detected and causes stop/inhibit.
 
