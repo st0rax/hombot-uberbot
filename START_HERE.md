@@ -36,8 +36,8 @@ useful alongside them. See `docs/ROADMAP.md` for the staged plan.
    device; several of them exist because something broke
 4. `docs/PROJECT_BOUNDARIES.md`, `docs/ARCHITECTURE.md` -- repository and
    runtime boundaries
-5. `docs/ROADMAP.md`, `docs/UBERBOT_ROADMAP.md` -- the device and integration
-   tracks
+5. `docs/ROADMAP.md`, `docs/MOTION_READINESS.md`, `docs/UBERBOT_ROADMAP.md` --
+   the device roadmap, physical-movement evidence gate and integration track
 6. `docs/PROTOCOL.md` -- the verified and reconstructed device protocols
 7. `docs/OPERATOR_TOOLS.md` -- the scripts that drive the robot from a
    development machine, and why they are shaped the way they are

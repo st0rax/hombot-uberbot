@@ -80,7 +80,8 @@ current responsibilities are:
 The only current write-capable endpoint is token-gated audio playback. Motion
 APIs are deliberately absent. Before adding motion, implement authentication,
 bounded connections, a watchdog, an exclusive lease, a heartbeat and fresh
-sensor interlocks.
+sensor interlocks. The complete live-evidence release gate is defined in
+[`MOTION_READINESS.md`](MOTION_READINESS.md).
 
 The observed legacy network setup binds the LG services broadly but does not route
 the nominal loopback range correctly. The daemon therefore discovers its active

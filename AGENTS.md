@@ -185,18 +185,22 @@ Known paths through it include driving, rotation and docking movements. This
 is already stated in `CONTRIBUTING.md`; it is repeated here because it is a
 safety rule, not a style rule.
 
-## Physical movement is the human-in-the-loop boundary
+## Physical movement has a self-releasing readiness gate
 
-The device owner authorizes autonomous repository, host and non-motion robot
-work. That authorization does not silently extend to a command that may move
-the physical robot.
+The device owner authorizes autonomous repository, host and robot work,
+including autonomous release of the movement lock. Release is allowed only
+after every prerequisite in `docs/MOTION_READINESS.md` has fresh, positive,
+recorded evidence. A failed, unknown or stale prerequisite means **no
+movement**. An unresolved bumper or other safety-sensor condition is an
+automatic failure.
 
-Before any movement-capable test, stop and state the intended direction,
-duration or distance, and reliable stop path. Obtain explicit confirmation
-that the owner is supervising the robot and that its physical test area is
-clear. A general request to continue autonomously is not movement approval.
-The Stage-2 lease, heartbeat and live sensor-interlock requirements remain
-mandatory even after that confirmation.
+After the gate passes, no additional per-movement owner confirmation is
+required while its evidence remains valid. Start with the smallest bounded
+motion in a controlled clear test area and keep the original LG/Micom safety
+authority active. The semantic allowlist, exclusive lease, heartbeat and
+live sensor/transport stop interlocks remain mandatory. Any relevant fault,
+disconnect, stale sensor value or loss of stop authority immediately closes
+the gate again.
 
 ## The battery is explicitly outside this project's scope
 

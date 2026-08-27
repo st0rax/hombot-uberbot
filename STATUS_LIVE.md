@@ -10,6 +10,11 @@ Last device measurement: 2026-08-27. Older receipts stay dated 2026-08-23.
 Nothing is marked live unless a session measured it on the robot. Code that
 is only in the tree stays under "In the tree, not on the device".
 
+Maintenance note: the owner reported that bumpers are physically blocked and
+may disconnect the robot during the reserved 2026-08-27 19:30-21:00 CEST
+window. No device access or movement test is scheduled in that window. This is
+an owner report, not a decoded RawSensor result.
+
 ## Deployed
 
 - `hombotd 0.1.10` is the active service, started from `rc.local`. Reconfirmed
@@ -140,6 +145,11 @@ These receipts are from the 23 August session. They were not re-run on
   operator tool a device service.
 
 ## Known and open
+
+- **Movement readiness is locked.** The owner reports physically blocked
+  bumpers. They must be restored and independently stimulus-tested, and every
+  mandatory item in `docs/MOTION_READINESS.md` must have fresh positive
+  evidence before the movement lock may self-release.
 
 - **No confirmed serial console access.** `inittab` shows a respawning root
   shell on `tts0`, which is a strong lead, not a tested fallback. Treat this

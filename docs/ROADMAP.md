@@ -31,13 +31,18 @@ the dates of individual measurements.
 
 ## Stage 2: safe local control
 
+The release criteria and evidence format for this stage are defined in
+[`MOTION_READINESS.md`](MOTION_READINESS.md). Until every mandatory item is
+fresh and positive, the movement lock stays closed.
+
 - Local authentication with a token stored mode `0600`.
 - Host/Origin validation and no wildcard CORS.
 - Semantic command allowlist; no shell, arbitrary frame or upload execution.
 - Exclusive control lease, frequent heartbeat and automatic stop.
 - Fresh sensor state plus cliff, wheel-drop, bumper, battery and transport
   interlocks.
-- Motion tests only with stable power and a controlled test area.
+- Motion tests only after the readiness gate passes, with stable power and a
+  controlled test area.
 
 ## Stage 3: companion compute
 
