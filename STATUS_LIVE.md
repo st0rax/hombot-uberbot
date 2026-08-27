@@ -26,6 +26,13 @@ deployed.
 
 ## Verified live, 2026-08-27
 
+- **Dedicated operator SSH key**: an RSA public key compatible with the
+  device's `dropbear_2013.56` server was appended to
+  `/root/.ssh/authorized_keys`; the previous file was preserved as
+  `authorized_keys.before-codex-20260827`. A fresh key-only Paramiko session
+  authenticated as root and rechecked `armv6l` plus the executable bit on
+  `/usr/etc/rc.local`. Password authentication was not removed and no boot or
+  service configuration changed.
 - **`GET /api/v1/sensors`**: `available: true`, `raw_record_size: 158`,
   `age_ms` about 14. Subscriber `state` was `connected` with
   `HOMBOTD_RAWSENSOR=1`.

@@ -185,6 +185,19 @@ Known paths through it include driving, rotation and docking movements. This
 is already stated in `CONTRIBUTING.md`; it is repeated here because it is a
 safety rule, not a style rule.
 
+## Physical movement is the human-in-the-loop boundary
+
+The device owner authorizes autonomous repository, host and non-motion robot
+work. That authorization does not silently extend to a command that may move
+the physical robot.
+
+Before any movement-capable test, stop and state the intended direction,
+duration or distance, and reliable stop path. Obtain explicit confirmation
+that the owner is supervising the robot and that its physical test area is
+clear. A general request to continue autonomously is not movement approval.
+The Stage-2 lease, heartbeat and live sensor-interlock requirements remain
+mandatory even after that confirmation.
+
 ## The battery is explicitly outside this project's scope
 
 The device owner handles battery work themselves. Do not propose, script, or
