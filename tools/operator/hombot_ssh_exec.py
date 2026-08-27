@@ -4,6 +4,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pydeps_legacy"))
 
 import paramiko
+from ssh_auth import connect_auth
 
 
 def _require(name):
@@ -25,12 +26,10 @@ def main():
     client.connect(
         _require("HOMBOT_HOST"),
         username=os.environ.get("HOMBOT_USER", "root"),
-        password=os.environ["HOMBOT_LOGIN_SECRET"],
-        look_for_keys=False,
-        allow_agent=False,
         timeout=10,
         banner_timeout=10,
         auth_timeout=10,
+        **connect_auth(lambda: _require("HOMBOT_LOGIN_SECRET")),
     )
     _, stdout, stderr = client.exec_command(sys.argv[1], timeout=30)
     exit_code = stdout.channel.recv_exit_status()

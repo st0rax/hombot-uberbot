@@ -27,14 +27,22 @@ microphone on the operator machine (`converse.py`, `listen_pc.py`).
 
 ## Required environment
 
-No LAN address is hardcoded in this repository. Every tool that talks to the
-robot needs:
+No LAN address or private key is hardcoded in this repository. Every tool that
+talks to the robot needs:
 
 | Variable | Meaning |
 | --- | --- |
 | `HOMBOT_HOST` | the robot's IP address on your network |
-| `HOMBOT_LOGIN_SECRET` | the root ssh password, or create a `.hombot_secret` file next to the scripts (never commit it; `*_secret*` is gitignored) |
 | `HOMBOT_SERVE_IP` | this machine's own address, as the robot can reach it -- needed by any tool that uploads audio (`say.py`, `converse.py`, `homebot.py`, `wakeword.py`) |
+
+Authentication is key-first. The default key is
+`~/.ssh/hombot_codex_rsa`; `HOMBOT_SSH_KEY` can point to another compatible
+RSA private key. The HomBot's Dropbear 2013.56 server requires the legacy
+`ssh-rsa` signature, which the shared operator helper selects explicitly.
+
+If no key exists, the tools fall back to `HOMBOT_LOGIN_SECRET` or their
+existing `.hombot_secret` loader. Never commit either credential; matching
+secret names are gitignored.
 
 Optional: `HOMBOT_USER` (default `root`), `HOMBOT_SERVE_PORT` (default
 `8099`), `HOMBOT_VOICE` (a Windows SAPI voice name, default `Microsoft Hedda

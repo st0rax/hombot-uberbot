@@ -29,6 +29,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "pydeps_legacy"))
 
 import paramiko  # noqa: E402
+from ssh_auth import connect_auth  # noqa: E402
 
 
 def _require(name):
@@ -71,12 +72,10 @@ def connect(attempts=12):
             client.connect(
                 HOST,
                 username=os.environ.get("HOMBOT_USER", "root"),
-                password=secret(),
-                look_for_keys=False,
-                allow_agent=False,
                 timeout=20,
                 banner_timeout=20,
                 auth_timeout=20,
+                **connect_auth(secret),
             )
             return client
         except Exception as error:  # the WLAN link drops for seconds at a time
