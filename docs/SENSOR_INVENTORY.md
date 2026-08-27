@@ -247,16 +247,17 @@ string's numeric groups.
 
 ## Live: Gehäuse-offen contact (2026-08-27)
 
-Operator confirmed the housing switch is currently **offen**. The contact is
-documented as **NiN**.
+Operator reported the housing switch **offen** at the moment they said so
+(2026-08-27 session). That is a point-in-time reading, not a standing live
+state. The contact is documented as **NiN**.
 
 A toggle window was captured operator-side (JSONL, not stored in this
 repository). One binary bit in the 158-byte wire frame followed the presses
-and ended at `0` while the operator reported open. Candidate only: byte 124
-bit 0, polarity `0` = offen under a NiN contact. This is **not** a wire name
-for `rawsensor.rs`. `SENSOR_CAPTURE.md` still requires capture XOR and
-firmware (`DasPublishSensorRawData` or equivalent) to agree before a decoder
-edit.
+and ended at `0` in the same window as the operator report. Candidate only:
+byte 124 bit 0, polarity `0` = offen under a NiN contact. This is **not** a
+wire name for `rawsensor.rs`. `SENSOR_CAPTURE.md` still requires capture XOR
+and firmware (`DasPublishSensorRawData` or equivalent) to agree before a
+decoder edit.
 
 ## Next concrete step
 
