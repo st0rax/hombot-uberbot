@@ -17,8 +17,9 @@ is only in the tree stays under "In the tree, not on the device".
 - `HOMBOTD_RAWSENSOR=1` is on. The RawSensor subscriber reported `state`
   `connected` in that session.
 - Boot greeting: an audio clip plays on startup via a
-  `# FRANKENHOMO_GREETING` block in `/usr/etc/rc.local`, installed with
-  `tools/operator/deploy_greeting.py --at-boot`. Last confirmed 2026-08-23.
+  `# FRANKENHOMO_GREETING` block in `/usr/etc/rc.local`. Reconfirmed
+  2026-08-27: `padded_hedda_schtorax.snd` played after unmute (operator
+  heard "hallo storax").
 
 `main` currently builds as `0.1.11` (`hombotd/Cargo.toml` after `5278fe7`).
 That binary is not what the robot is running. C2 is in `main` and is not
@@ -34,12 +35,40 @@ deployed.
 - **Battery voltage field**: still `calibration: pending_multimeter_pair`.
   Do not quote it as volts. The centivolt raw and the JSON `voltage_v`
   number are a mapping, not a meter reading.
-- **Voice**: still off. No live frame. Do not touch `Name.dat`.
+- **Factory voice service**: still off. No live frame. Do not touch
+  `Name.dat`.
+- **On-command speech on WM8960**: measured. Mixer control
+  `Speaker Playback Off` was `All off`. After
+  `amixer -c 0 sset 'Speaker Playback Off' Stereo`, `aplay -c 1 -r 16000
+  -f S16_LE` of a 16 kHz S16 LE mono clip played. Confirmed with the boot
+  greeting (`padded_hedda_schtorax.snd`, operator heard "hallo storax")
+  and four Hedda clips on the device:
+  `/usr/data/frankenhomo/sounds/{ja,nein,bereit,ich_lade}.snd`.
+- **`POST /api/v1/audio/play` is not the live path** on this robot with
+  only the built-in codec. LG `/Playback` holds the WM8960 subdevice.
+  Unmute-then-aplay is what actually produced sound. `say.py`'s skip-busy
+  -card logic leaves no device.
 - **C2 / 0.1.11 dashboard**: not on the device.
 - **Gehäuse-offen switch**: operator reported **offen** at the moment they
   said so (2026-08-27 session), not a standing live state. Contact type
   **NiN**. That is the physical contact, not a named RawSensor wire field.
   No dump in this repository.
+- **Connector XOR session paused** (incomplete). Unplug of the 2-pin
+  connector labelled nr.1 vs rest froze bytes **16–17** (`ffff` → `0100`)
+  and moved bytes **50** (`81` → `4f`) and **54** (`81` → `50`). Replug
+  did not restore 16–17 until reboot. After reboot with nr.1 seated:
+  16–17 `ffff`, 50/54 `81`. Byte **62 = `fe` is not an unplug flag**
+  (connector 2 was already in). No bumper/cliff XOR this session.
+  Captures are operator-side, not in this repository. Byte indices only;
+  not decoder field names. Do not extend `rawsensor.rs`.
+- **RawSensor packer is the Micom MCU**, not Linux. `DasPublishSensorRawData`
+  at `0x1a9b4` in `rpmain.axf` is memcpy(158)+publish. `/DAS`
+  (`CDataAccessService`, id 110) runs on node `/micom`; UART2 230400 via
+  `/dev/ttymxc1` → `ttyS1` → `tts/1`; broker PID 709 holds the fds.
+  No Micom image on the Linux FS (`firmwareupdate.dat` absent). UART1
+  unread. Do not attach.
+- **Two dock-slip power losses** while the housing was open. Robot came
+  back `CHARGING` on 0.1.10 both times.
 
 ## Verified live, last measured 2026-08-23
 
@@ -156,8 +185,12 @@ These receipts are from the 23 August session. They were not re-run on
   section in `AGENTS.md`.
 - **Sensor inventory is incomplete.** The RawSensor frame is 158 bytes wide;
   four fields are decoded (`hombotd/src/rawsensor.rs`), the rest are not.
-  15 baseline frames exist as of 2026-08-27; bumper/cliff XOR has not been
+  15 baseline frames exist as of 2026-08-27. Bumper/cliff XOR has not been
   done. Bytes 4-9 are control (battery/charger), not bumper/cliff signal.
+  Connector-nr.1 unplug produced XOR candidates at bytes 16–17, 50, and 54
+  (see `docs/SENSOR_INVENTORY.md`); not named in the decoder.
+- **Python operator tools are currently blocked** on the operator PC.
+  Use OpenSSH + `tools/operator/speak.ps1` for on-command speech.
 - **Battery voltage is not a calibrated volt reading.** Pending a
   multimeter pair.
 
@@ -165,9 +198,12 @@ These receipts are from the 23 August session. They were not re-run on
 
 Show the robot on **0.1.10** with RawSensor connected: `available true`,
 158-byte records, `age_ms` ~14, 15 baseline frames, voltage uncalibrated.
-Camera, SmartControl, and the 23 August audio/tether receipts still stand as
-older measurements. Voice is decoded / not live-confirmed. `/c2` and the
-0.1.11 dashboard are tree, not the device.
+On-command speech works: unmute WM8960 then `aplay` a 16 kHz S16 LE clip
+(Hedda clips already on the device; `speak.ps1` for new text). Factory
+voice is still decoded / not live-confirmed. Camera, SmartControl, and the
+23 August audio/tether receipts still stand as older measurements. `/c2`
+and the 0.1.11 dashboard are tree, not the device. Connector XOR is
+paused, not a decoder.
 
 ## Credentials
 
