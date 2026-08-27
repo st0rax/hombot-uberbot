@@ -245,6 +245,19 @@ stack slots are filled by `stm sp,{r1,r2,r3}` with `0x2e`, `0x30`, `0x26`
 -- consistent with the meanings above landing in the tail of the format
 string's numeric groups.
 
+## Live: Gehäuse-offen contact (2026-08-27)
+
+Operator confirmed the housing switch is currently **offen**. The contact is
+documented as **NiN**.
+
+A toggle window was captured operator-side (JSONL, not stored in this
+repository). One binary bit in the 158-byte wire frame followed the presses
+and ended at `0` while the operator reported open. Candidate only: byte 124
+bit 0, polarity `0` = offen under a NiN contact. This is **not** a wire name
+for `rawsensor.rs`. `SENSOR_CAPTURE.md` still requires capture XOR and
+firmware (`DasPublishSensorRawData` or equivalent) to agree before a decoder
+edit.
+
 ## Next concrete step
 
 1. Disassemble `CMapBuilder::GeneratePSDObstaclePoint(SensorData_t*, MapPoint_t*, int)`
