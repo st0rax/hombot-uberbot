@@ -11,7 +11,7 @@ Nothing is marked live unless a session measured it on the robot. Code that
 is only in the tree stays under "In the tree, not on the device".
 
 Maintenance note: the owner reported that bumpers are physically blocked and
-may disconnect the robot during the reserved 2026-08-27 19:30-21:00 CEST
+may disconnect the robot during the reserved 2026-08-27 19:30-21:30 CEST
 window. No device access or movement test is scheduled in that window. This is
 an owner report, not a decoded RawSensor result.
 
