@@ -1,16 +1,25 @@
 # Start here
 
-You are picking up work on **UBERBOT**, a reversible modernization of one
-specific LG HomBot VR6340LV. Read this file, then `STATUS_LIVE.md`, then
-`AGENTS.md`, before touching the device.
+You are picking up work on **UBERBOT**, the independent integration project
+between `webagent-rs` and the reversible modernization of one specific LG
+HomBot VR6340LV. Read this file, then `STATUS_LIVE.md`, then `AGENTS.md`,
+before touching the device.
 
 ## What this project is
 
-A small Rust daemon (`hombotd/`) that replaces LG's unauthenticated
-web/camera layer while leaving the original real-time motion and safety stack
-untouched. Everything else -- USB tethering, USB audio, the voice service
-protocol, the operator tools -- exists to extend what that daemon can do
-without ever needing to modify LG's own application.
+Today, the implemented part is a small Rust daemon (`hombotd/`) that replaces
+LG's unauthenticated web/camera layer while leaving the original real-time
+motion and safety stack untouched. Everything else -- USB tethering, USB
+audio, the voice service protocol, the operator tools -- exists to extend what
+that daemon can do without ever needing to modify LG's own application.
+
+The new integration track connects that body to the agent/Brain capabilities
+maintained independently in
+[`webagent-rs`](https://github.com/st0rax/webagent-rs). It does not merge the
+repositories or make one project's release depend on the other's `main` or
+`master` branch. Integration happens through versioned contracts and pinned,
+reproducible revisions or artifacts. Read `docs/PROJECT_BOUNDARIES.md` before
+moving code or responsibilities across that boundary.
 
 The goal stated by the device's owner is one sentence: **call it, and it
 comes.** Two capabilities are missing before that is literally true --
@@ -25,8 +34,12 @@ useful alongside them. See `docs/ROADMAP.md` for the staged plan.
    which changes faster than this repo's commit history
 3. `AGENTS.md` -- working rules distilled from incidents on this exact
    device; several of them exist because something broke
-4. `docs/ARCHITECTURE.md`, `docs/PROTOCOL.md` -- how the pieces fit together
-5. `docs/OPERATOR_TOOLS.md` -- the scripts that drive the robot from a
+4. `docs/PROJECT_BOUNDARIES.md`, `docs/ARCHITECTURE.md` -- repository and
+   runtime boundaries
+5. `docs/ROADMAP.md`, `docs/UBERBOT_ROADMAP.md` -- the device and integration
+   tracks
+6. `docs/PROTOCOL.md` -- the verified and reconstructed device protocols
+7. `docs/OPERATOR_TOOLS.md` -- the scripts that drive the robot from a
    development machine, and why they are shaped the way they are
 
 ## The one fact that overrides convenience

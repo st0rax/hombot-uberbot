@@ -1,5 +1,46 @@
 # Architecture
 
+## Repository and product boundary
+
+Uberbot combines capabilities from two independent projects without combining
+their Git histories or release ownership:
+
+```text
+webagent-rs repository                 hombot-uberbot repository
+agent loop, Brains, memory             HomBot sidecar and device evidence
+             |                                      |
+             +---- versioned integration contracts -+
+                                |
+                         Uberbot integration
+```
+
+`webagent-rs` remains a general local agent product. `hombotd` remains the
+HomBot body service and can be built, deployed and rolled back without
+WebAgent. The new Uberbot layer owns only the adapters, capability model and
+end-to-end integration needed to connect them. Detailed ownership and
+versioning rules are in [`PROJECT_BOUNDARIES.md`](PROJECT_BOUNDARIES.md).
+
+No integration component is live on the physical robot yet. The following
+target diagram must not be read as a deployed-state claim:
+
+```text
+webagent-rs on companion host
+        |
+ versioned Brain interface
+        |
+Uberbot integration runtime
+        |
+ versioned semantic Body API
+        |
+hombotd on the HomBot
+        |
+rpmain -> Micom -> original safety logic
+```
+
+The initial integration should run on a modern companion host. ARMv6 remains a
+body target, not the place where every Brain, vision or memory capability must
+run.
+
 ## Platform boundary
 
 The HomBot has two important control domains:
@@ -36,9 +77,10 @@ current responsibilities are:
 - perform the device-local SmartControl handshake and expose status as JSON;
 - expose a small read-only health surface.
 
-Write APIs are deliberately absent. Before adding motion, implement authentication,
-bounded connections, a watchdog, an exclusive lease, a heartbeat and fresh sensor
-interlocks.
+The only current write-capable endpoint is token-gated audio playback. Motion
+APIs are deliberately absent. Before adding motion, implement authentication,
+bounded connections, a watchdog, an exclusive lease, a heartbeat and fresh
+sensor interlocks.
 
 The observed legacy network setup binds the LG services broadly but does not route
 the nominal loopback range correctly. The daemon therefore discovers its active

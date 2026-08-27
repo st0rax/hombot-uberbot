@@ -2,10 +2,27 @@
 
 > **Verbindliche Arbeitsgrundlage:** Vor jeder Arbeit ist [`AGENTS.md`](AGENTS.md) vollständig zu lesen und strikt zu befolgen. Projektspezifische Regeln gelten ergänzend; bei Konflikten gilt die strengere Schutzregel.
 
-UBERBOT is a reversible modernization project for the LG HomBot VR6340LV.
-The project keeps the original real-time motion and safety stack in place while
-replacing the obsolete unauthenticated web/camera layer with a small, auditable
-Rust daemon.
+UBERBOT is the independent integration project that combines two separately
+versioned lines of work:
+
+- [**webagent-rs**](https://github.com/st0rax/webagent-rs) provides the
+  provider-agnostic agent/Brain runtime on a capable companion host.
+- The **HomBot modernization** in this repository provides the physical body:
+  the audited `hombotd` sidecar, device research, deployment and recovery
+  procedures.
+
+Neither project is absorbed into the other. `webagent-rs` keeps its own
+repository, releases and product scope; the HomBot sidecar keeps its own device
+status, safety rules and release line. This repository owns the integration
+contracts and HomBot-specific adapters that turn those projects into the new
+Uberbot system. See [`docs/PROJECT_BOUNDARIES.md`](docs/PROJECT_BOUNDARIES.md)
+for the ownership rules and
+[`docs/UBERBOT_ROADMAP.md`](docs/UBERBOT_ROADMAP.md) for the integration plan.
+
+The physical-device project remains a reversible modernization of the LG
+HomBot VR6340LV. It keeps the original real-time motion and safety stack in
+place while replacing the obsolete unauthenticated web/camera layer with a
+small, auditable Rust daemon.
 
 **New to this repository? Start with [`START_HERE.md`](START_HERE.md)**, then
 [`STATUS_LIVE.md`](STATUS_LIVE.md) for what is actually verified on the
@@ -17,10 +34,16 @@ streaming, a read-only SmartControl status adapter, and a decoded (but not yet
 live-confirmed) subscriber for LG's own factory voice services. Actuator
 control is intentionally not exposed yet.
 
+> **Integration status:** the repository boundary and target architecture are
+> documented, but no WebAgent/Uberbot core is deployed on the robot and no
+> agent-to-body control path exists yet. The verified live system remains the
+> standalone `hombotd` sidecar described in `STATUS_LIVE.md`.
+
 ## Current status
 
 Release **0.1.10** remains the active service on the research device. The
-working tree prepares **0.1.11**, which adds a read-only Voice-Telemetry panel
+repository's `main` branch prepares **0.1.11**, which adds a read-only
+Voice-Telemetry panel
 for the existing `/api/v1/voice` data: subscriber state, last decoded sound
 bearing, last event, event counter and confirmation state. It does not enable
 the subscriber, alter boot settings or expose actuator control. See
@@ -61,10 +84,12 @@ hombotd/                 Rust daemon and embedded web UI
 tools/operator/          Windows-side scripts that drive the robot remotely
 deploy/                  guarded install and rollback scripts
 docs/ARCHITECTURE.md     component boundaries and data flows
+docs/PROJECT_BOUNDARIES.md repository ownership and integration rules
 docs/PROTOCOL.md         reconstructed SmartControl framing
 docs/REVERSE_ENGINEERING.md
 docs/HARDWARE.md         board, UART and expansion findings
-docs/ROADMAP.md          staged path from sidecar to recovery OS
+docs/ROADMAP.md          HomBot device and recovery roadmap
+docs/UBERBOT_ROADMAP.md  cross-project Uberbot integration roadmap
 docs/USB_TETHERING.md    Android RNDIS/CDC driver and relay plan
 docs/VOICE_STACK.md      LG's dormant factory voice/keyword/SSL services
 docs/VOICE_PROTOCOL.md   their message formats, decoded from disassembly
@@ -100,6 +125,10 @@ The binary is created at
 The camera device path and listen address can be supplied by environment
 variables. On the robot, keep logs in RAM-backed `/tmp` to reduce UBIFS wear.
 Consult `hombotd/README.md` for the exact endpoints and current limitations.
+
+This runs the HomBot body service only. The future Uberbot integration runtime
+is a separate component described in `docs/UBERBOT_ROADMAP.md`; it must not be
+implied by a successful `hombotd` development-host run.
 
 ## UBERPHONE USB relay
 

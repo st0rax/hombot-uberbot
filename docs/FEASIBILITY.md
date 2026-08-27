@@ -14,19 +14,29 @@ B into a camera dashboard.
 **C (full firmware rewrite on the NXP2120) is rejected as the product.** Keep
 Stage 4 (UART0 plus RAM boot) as recovery, not as the new system.
 
+The companion architecture is now tracked explicitly in
+`docs/UBERBOT_ROADMAP.md`. Its WebAgent/Brain side remains authoritative in the
+independent `webagent-rs` project; this repository owns the HomBot body and the
+integration contracts, not a fork of WebAgent. See
+`docs/PROJECT_BOUNDARIES.md`.
+
 ## What is actually running
 
-From `STATUS_LIVE.md` (last device measurement 2026-08-23):
+From `STATUS_LIVE.md` (latest device measurement 2026-08-27; older receipts
+remain dated 2026-08-23):
 
-- Deployed service: `hombotd 0.1.10`.
+- Deployed service: `hombotd 0.1.10`, reconfirmed 2026-08-27.
+- The RawSensor subscriber was connected and a 15-frame rest baseline was
+  captured on 2026-08-27; no bumper or cliff stimulus was applied.
 - Camera, SmartControl keepalive, USB tether, USB audio, local control token,
-  and `POST /api/v1/audio/play` gating were measured on the robot that day.
+  and `POST /api/v1/audio/play` gating have older live receipts from
+  2026-08-23.
 - Factory voice protocol is decoded; `/api/v1/voice` still reports
   `live_confirmed: false`. No live frame. Do not touch `Name.dat` (`AGENTS.md`).
 - No motor/drive command path. `hombotd` sends keepalive only.
 - No confirmed serial console.
 
-Tree after that date (Voice-Telemetry 0.1.11, C2 page) is not a device
+Tree work after those receipts (Voice-Telemetry 0.1.11, C2 page) is not a device
 receipt. `STATUS_LIVE.md` already says so.
 
 ## A — Sidecar / Stage 2 (next stage, not the product)

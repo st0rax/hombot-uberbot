@@ -1,17 +1,25 @@
-# Roadmap
+# HomBot device roadmap
 
-## Live checkpoint: release 0.1.3
+This file is the device-specific roadmap for `hombotd`, safe control and
+recovery. The cross-project WebAgent/Uberbot integration has its own milestones
+in [`UBERBOT_ROADMAP.md`](UBERBOT_ROADMAP.md). Keeping both tracks separate
+prevents a planned agent feature from being mistaken for a verified robot
+capability.
 
-- Deployed as the active service on the research device.
-- Managed startup restores loopback and pins the device-local SmartControl
-  adapter to localhost.
-- SmartControl reports connected. Port 4000 remains established for status and
-  keepalive traffic; the one-shot port-4002 admission descriptor is closed after
-  `CONNECT/ENABLE` so it does not linger in `CLOSE_WAIT`.
-- `CONNECT_INIT` fields are currently null and remain represented as unknown.
-  No battery, state or mode values are synthesized.
-- Bounded stream checks produced 20/20 unique frames at 10.29 FPS color and 16.53
-  FPS grayscale on the tested WLAN path.
+## Live checkpoint: 2026-08-27
+
+- `hombotd 0.1.10` is deployed as the active service on the research device.
+- The RawSensor subscriber was connected with `HOMBOTD_RAWSENSOR=1`; a
+  15-frame rest baseline was captured without bumper or cliff stimulus.
+- The tree builds `0.1.11`, including Voice-Telemetry and C2 UI work, but that
+  version is not deployed.
+- Camera, SmartControl keepalive, USB tethering, USB audio, the local control
+  token and token gating for `POST /api/v1/audio/play` have dated live receipts.
+- There is no motor path, no confirmed serial console and no live-confirmed
+  factory voice frame.
+
+`STATUS_LIVE.md` is authoritative for the full verified/unverified split and
+the dates of individual measurements.
 
 ## Stage 1: observable sidecar
 
@@ -37,6 +45,8 @@
   modern host.
 - Keep the HomBot as a low-latency chassis and sensor gateway.
 - Define versioned telemetry and command schemas with replayable synthetic tests.
+- Integrate through the independent Uberbot track in `UBERBOT_ROADMAP.md`;
+  do not copy WebAgent internals into `hombotd`.
 
 ## Stage 4: recovery operating system
 
@@ -58,6 +68,8 @@ driver work.
 ## Exit criteria
 
 - A new developer can build, deploy and roll back from repository documentation.
+- `hombotd` remains independently buildable and operable without WebAgent or
+  the Uberbot integration runtime.
 - Camera, system, sensor and battery-source health are locally observable.
 - No cloud dependency or unauthenticated control surface.
 - Every persistent change has a verified recovery route.
