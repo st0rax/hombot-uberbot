@@ -36,6 +36,9 @@ deployed.
   number are a mapping, not a meter reading.
 - **Voice**: still off. No live frame. Do not touch `Name.dat`.
 - **C2 / 0.1.11 dashboard**: not on the device.
+- **Gehäuse-offen switch**: operator-confirmed **offen** (this session).
+  Contact type **NiN**. That is the physical contact, not a named RawSensor
+  wire field. No dump in this repository.
 
 ## Verified live, last measured 2026-08-23
 
