@@ -259,6 +259,36 @@ wire name for `rawsensor.rs`. `SENSOR_CAPTURE.md` still requires capture XOR
 and firmware (`DasPublishSensorRawData` or equivalent) to agree before a
 decoder edit.
 
+## Live: connector unplug XOR (2026-08-27, paused)
+
+Incomplete session. Operator unplugged the 2-pin connector labelled nr.1
+and compared against rest-of-frame captures. Byte indices in the 158-byte
+wire frame only -- **not** field names, **not** a `rawsensor.rs` edit.
+Firmware (`DasPublishSensorRawData` or the Micom packer) and capture XOR
+still have to agree before a decoder change.
+
+| Bytes | Rest | Unplugged nr.1 |
+| --- | --- | --- |
+| 16–17 | `ffff` | `0100` (then frozen until reboot) |
+| 50 | `81` | `4f` |
+| 54 | `81` | `50` |
+
+Replug of nr.1 did not restore bytes 16–17 until reboot. After reboot with
+nr.1 seated: 16–17 `ffff`, 50/54 `81`.
+
+Byte **62 = `fe` after reboot is not connector-2-unplugged.** Connector 2
+was already seated when that frame was taken. An earlier in-session flicker
+to frozen `fe` before a dock slip is a session observation, not a boot
+mapping.
+
+Bytes 4–9 remain control/noise (battery/charger), not this signal. No
+cliff XOR. Earlier bumper XOR from the open-housing session is obsolete
+for this capture set. Captures are operator-side, not in this repository.
+
+The 158-byte packer is the Micom MCU behind `/DAS` node `/micom`
+(UART2 230400). `rpmain`'s `DasPublishSensorRawData` at `0x1a9b4` is
+memcpy(158)+publish only. No Micom image on the Linux FS. UART1 unread.
+
 ## Next concrete step
 
 1. Disassemble `CMapBuilder::GeneratePSDObstaclePoint(SensorData_t*, MapPoint_t*, int)`

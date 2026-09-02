@@ -21,9 +21,17 @@ device forced a specific shape on all of them:
 python -m pip install -r tools/operator/requirements.txt
 ```
 
-`paramiko` is the only hard dependency for the deployment and speech tools;
-`numpy` and `sounddevice` are needed only by the scripts that record from a
-microphone on the operator machine (`converse.py`, `listen_pc.py`).
+`paramiko` is the only hard dependency for the **Python** deployment and
+speech tools; `numpy` and `sounddevice` are needed only by the scripts that
+record from a microphone on the operator machine (`converse.py`,
+`listen_pc.py`).
+
+If Python is unavailable on the operator PC (it currently is), use
+`speak.ps1` instead of `say.py`. It talks to the robot over OpenSSH with
+the same Dropbear KEX/MAC/cipher set and the same HTTP+wget upload. Auth is
+`HOMBOT_LOGIN_SECRET`, a sibling `.hombot_secret`, or
+`%USERPROFILE%\.config\hombot\askpass.cmd` (`HOMBOT_ASKPASS` overrides
+the path). The script never prints the password.
 
 ## Required environment
 
@@ -83,3 +91,11 @@ Desktop`).
   `hw:N,0`. The devices tested here only run at 48 kHz; `hw:` does not
   resample and silently mislabels the output as 16 kHz, producing audio that
   plays back three times too fast.
+* Dropbear has no `/usr/libexec/sftp-server`, so `scp`/`sftp` fail. File
+  transfer is HTTP on the operator PC plus `wget` on the robot. BusyBox
+  `wget -O` will not overwrite an existing dest: `rm` it first.
+* On-command speech on the built-in WM8960 (2026-08-27): LG `/Playback`
+  holds the only playback substream and `Speaker Playback Off` sits at
+  `All off`. Unmute with `amixer -c 0 sset 'Speaker Playback Off' Stereo`,
+  then `aplay -c 1 -r 16000 -f S16_LE`. Skipping the busy card produces
+  silence, not a fallback.
