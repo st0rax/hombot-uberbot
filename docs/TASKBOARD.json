@@ -1,0 +1,97 @@
+{
+  "project": "hombot-uberbot",
+  "created": "2026-09-02",
+  "owner": "storax",
+  "default_branch": "main",
+  "verification_note": "cargo test --lib is not a live receipt. STATUS_LIVE.md is.",
+  "note": "JSON is truth. One id, one developer. Ice: no SSH/deploy/Name.dat/motors. Never mark live done without a device measurement. Kante = depends_on; never pull a verkettete Aufgabe in parallel.",
+  "tasks": [
+    {
+      "id": "H-010",
+      "title": "Bazaar in place: START_HERE, GOALS, WORK_CONTRACT, TASKBOARD.json, GIT_AGENTS",
+      "type": "docs",
+      "status": "claimed",
+      "owner": "pflege",
+      "branch": "docs/H-010-bazaar-in-place",
+      "claimed_at": "2026-09-02",
+      "done_at": null,
+      "proof_path": null,
+      "verification": "PR open; START_HERE lists AGENTS+STATUS_LIVE+SECURITY before claim; no device change",
+      "dod": "Bazaar files on a branch/PR. Dummy untouched. PR #3 and #4 still open. Ice held.",
+      "depends_on": []
+    },
+    {
+      "id": "H-003",
+      "title": "PR #3 operator speak.ps1 + 2026-08-27 measurements (open)",
+      "type": "docs",
+      "status": "free",
+      "owner": null,
+      "branch": "feat/operator-speak-ps1",
+      "claimed_at": null,
+      "done_at": null,
+      "proof_path": "https://github.com/st0rax/hombot-uberbot/pull/3",
+      "verification": "Do not merge unless owner says. UART/ttymxc path must not land as invented i.MX nodes. Not a live done.",
+      "dod": "PR still reviewable; no merge from this board cell alone",
+      "depends_on": []
+    },
+    {
+      "id": "H-004",
+      "title": "PR #4 Stage-2 interlock gate, fail-closed, no motor path (open, tree-only)",
+      "type": "code",
+      "status": "free",
+      "owner": null,
+      "branch": "feat/stage2-interlock-gate",
+      "claimed_at": null,
+      "done_at": null,
+      "proof_path": "https://github.com/st0rax/hombot-uberbot/pull/4",
+      "verification": "Not on device (hombotd 0.1.10). Do not mark live. Do not merge unless owner says.",
+      "dod": "Gate remains tree-only until STATUS_LIVE says otherwise",
+      "depends_on": []
+    },
+    {
+      "id": "H-020",
+      "title": "UART0 console actually found and logged (HARDWARE.md CN14 is a candidate only)",
+      "type": "hardware",
+      "status": "blocked",
+      "owner": null,
+      "branch": null,
+      "claimed_at": null,
+      "done_at": null,
+      "proof_path": "docs/HARDWARE.md",
+      "verification": "STATUS_LIVE.md serial receipt. Ice: do not attach now.",
+      "dod": "Measured UART0, not a guessed ttymxc path",
+      "depends_on": []
+    },
+    {
+      "id": "H-021",
+      "title": "Bumper/cliff capture XOR per docs/SENSOR_CAPTURE.md (not done)",
+      "type": "docs",
+      "status": "blocked",
+      "owner": null,
+      "branch": null,
+      "claimed_at": null,
+      "done_at": null,
+      "proof_path": "docs/SENSOR_CAPTURE.md",
+      "verification": "STATUS_LIVE.md; ice and blocked bumpers: do not run on device now",
+      "dod": "Byte indices only, no rawsensor.rs names from XOR guesses",
+      "depends_on": []
+    },
+    {
+      "id": "H-030",
+      "title": "Motor/drive command path",
+      "type": "code",
+      "status": "blocked",
+      "owner": null,
+      "branch": null,
+      "claimed_at": null,
+      "done_at": null,
+      "proof_path": null,
+      "verification": "STATUS_LIVE.md motion receipt plus AGENTS.md interlocks. cargo test is not enough.",
+      "dod": "Allowlist + robot-side interlocks; no unauthenticated actuators",
+      "depends_on": [
+        "H-004",
+        "H-020"
+      ]
+    }
+  ]
+}
