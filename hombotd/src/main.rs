@@ -1,5 +1,6 @@
 mod audio;
 mod auth;
+mod interlock;
 mod net;
 mod rawsensor;
 mod voice;
@@ -620,6 +621,21 @@ fn handle_client(
             body.as_bytes(),
         );
         Ok(())
+    } else if path.starts_with("/api/v1/interlocks") {
+        let body = interlock::evaluate(
+            &rawsensor
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .interlock_input(Instant::now()),
+        )
+        .json();
+        response(
+            &mut stream,
+            "200 OK",
+            "application/json; charset=utf-8",
+            body.as_bytes(),
+        );
+        Ok(())
     } else if path.starts_with("/api/v1/voice") {
         let body = voice
             .lock()
@@ -818,6 +834,36 @@ mod tests {
         assert_eq!(meminfo_kib(sample, "MemTotal:"), Some(109_428));
         assert_eq!(meminfo_kib(sample, "MemFree:"), Some(35_060));
         assert_eq!(meminfo_kib(sample, "SwapFree:"), None);
+    }
+
+    #[test]
+    fn interlocks_endpoint_is_read_only_and_refuses_motion() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            handle_client(
+                stream,
+                Arc::new(Mutex::new(RobotStatus::new())),
+                Arc::new(Mutex::new(RawSensorStatus::new())),
+                Arc::new(Mutex::new(VoiceStatus::new())),
+            );
+        });
+
+        let mut client = TcpStream::connect(address).unwrap();
+        client
+            .write_all(b"GET /api/v1/interlocks HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            .unwrap();
+        let mut response = String::new();
+        client.read_to_string(&mut response).unwrap();
+        server.join().unwrap();
+
+        assert!(response.starts_with("HTTP/1.1 200 OK\r\n"));
+        assert!(response.contains("\"allow_motion\":false"));
+        assert!(response.contains("\"motor_path\":\"absent\""));
+        assert!(response.contains("\"cliff\":\"unknown\""));
+        assert!(response.contains("\"battery\":\"unknown\""));
+        assert!(!response.contains("voltage_v"));
     }
 
     #[test]

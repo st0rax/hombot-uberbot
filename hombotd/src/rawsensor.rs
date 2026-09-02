@@ -85,6 +85,26 @@ impl RawSensorStatus {
         self.json_at(Instant::now())
     }
 
+    /// Snapshot for the Stage-2 interlock gate. Does not name bumper/cliff
+    /// wire fields: those channels stay `Unknown` until firmware and capture
+    /// XOR agree. Battery bytes are passed through as raw values only.
+    pub(crate) fn interlock_input(&self, now: Instant) -> crate::interlock::Input {
+        let age_ms = self
+            .last_update
+            .map(|updated| now.saturating_duration_since(updated).as_millis());
+        let available = age_ms
+            .map(|age| age <= SAMPLE_STALE_AFTER.as_millis())
+            .unwrap_or(false);
+        let (charger, volts) = match (available, self.sample.as_ref()) {
+            (true, Some(sample)) => (
+                Some(sample.charger_state_raw),
+                Some(sample.voltage_raw_centivolts),
+            ),
+            _ => (None, None),
+        };
+        crate::interlock::Input::from_live_sample(available, charger, volts)
+    }
+
     fn json_at(&self, now: Instant) -> String {
         let age_ms = self
             .last_update
